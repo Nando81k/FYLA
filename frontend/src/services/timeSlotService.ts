@@ -1,4 +1,4 @@
-import { FEATURE_FLAGS } from '@/config/api';
+import { FEATURE_FLAGS } from '../config/api';
 import { ServiceFactory } from './apiService';
 import {
   TimeSlot,
@@ -9,7 +9,7 @@ import {
   AvailabilityFilter,
   SlotGenerationConfig,
   TimeSlotStats,
-} from '@/types/timeSlot';
+} from '../types/timeSlot';
 
 export class TimeSlotService {
   private baseURL = '/time-slots';
@@ -187,11 +187,8 @@ export class TimeSlotService {
    * Confirm a reserved time slot (convert to actual booking)
    */
   async confirmReservation(reservationId: string): Promise<{ success: boolean; bookingId?: string }> {
-    return await ServiceFactory.executeWithFallback(
-      FEATURE_FLAGS.USE_REAL_BOOKING_API,
-      () => this.confirmReservationReal(reservationId),
-      () => this.confirmReservationMock(reservationId)
-    );
+    console.log('🎯 confirmReservation called - ALWAYS using REAL API');
+    return await this.confirmReservationReal(reservationId);
   }
 
   private async confirmReservationReal(reservationId: string): Promise<{ success: boolean; bookingId?: string }> {

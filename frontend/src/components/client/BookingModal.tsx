@@ -23,8 +23,8 @@ import {
   Service, 
   TimeSlot, 
   Appointment 
-} from '@/types';
-import { TimeSlot as TimeSlotType } from '@/types/timeSlot';
+} from '../../types';
+import { TimeSlot as TimeSlotType } from '../../types/timeSlot';
 import TimeSlotPicker from '../booking/TimeSlotPicker';
 
 interface BookingModalProps {

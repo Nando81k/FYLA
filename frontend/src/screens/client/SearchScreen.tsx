@@ -17,9 +17,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/theme/ThemeProvider';
 import { providerService } from '@/services/providerService';
 import { locationService, LocationCoordinates } from '@/services/locationService';
 import MapComponent, { MarkerData } from '@/components/shared/MapComponent';
+import DarkModeToggle from '@/components/shared/DarkModeToggle';
 import {
   ProviderProfile,
   ProviderSearchRequest,
@@ -46,6 +48,7 @@ const getTagTextColor = (index: number) => tagColors[index % tagColors.length].t
 
 const SearchScreen: React.FC = () => {
   const { token } = useAuth();
+  const { colors, typography, spacing } = useTheme();
   const navigation = useNavigation<SearchNavigationProp>();
   const [providers, setProviders] = useState<ProviderProfile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -168,7 +171,11 @@ const SearchScreen: React.FC = () => {
 
   const renderProviderCard = ({ item: provider }: { item: ProviderProfile }) => (
     <TouchableOpacity 
-      style={styles.providerCard}
+      style={[styles.providerCard, { 
+        backgroundColor: colors.background.secondary,
+        borderColor: colors.primary,
+        shadowColor: colors.shadow.light,
+      }]}
       onPress={() => navigation.navigate('ProviderDetail', { providerId: provider.id })}
     >
       {/* Tags at the top for better visibility */}
@@ -187,8 +194,10 @@ const SearchScreen: React.FC = () => {
           </View>
         ))}
         {provider.tags.length > 4 && (
-          <View style={styles.moreTagsIndicator}>
-            <Text style={styles.moreTagsText}>+{provider.tags.length - 4}</Text>
+          <View style={[styles.moreTagsIndicator, { backgroundColor: colors.background.tertiary }]}>
+            <Text style={[styles.moreTagsText, { color: colors.text.secondary }]}>
+              +{provider.tags.length - 4}
+            </Text>
           </View>
         )}
       </View>
@@ -202,65 +211,122 @@ const SearchScreen: React.FC = () => {
         />
         <View style={styles.providerInfo}>
           <View style={styles.providerNameRow}>
-            <Text style={styles.providerName}>{provider.fullName}</Text>
+            <Text style={[styles.providerName, { color: colors.text.primary }]}>
+              {provider.fullName}
+            </Text>
             {provider.isOnline && <View style={styles.onlineIndicator} />}
           </View>
           
           <View style={styles.ratingRow}>
             {renderStars(provider.averageRating)}
-            <Text style={styles.ratingText}>
+            <Text style={[styles.ratingText, { color: colors.text.secondary }]}>
               {provider.averageRating} ({provider.totalReviews} reviews)
             </Text>
           </View>
           
           {provider.distance && (
-            <Text style={styles.distanceText}>{formatDistance(provider.distance)}</Text>
+            <Text style={[styles.distanceText, { color: colors.primary }]}>
+              {formatDistance(provider.distance)}
+            </Text>
           )}
         </View>
       </View>
 
       {provider.bio && (
-        <Text style={styles.providerBio} numberOfLines={2}>
+        <Text style={[styles.providerBio, { color: colors.text.secondary }]} numberOfLines={2}>
           {provider.bio}
         </Text>
       )}
 
-      {/* Posts Preview */}
+      {/* Enhanced Posts Preview with Scrollable View */}
       {provider.posts && provider.posts.length > 0 && (
         <View style={styles.postsPreview}>
-          <Text style={styles.postsPreviewTitle}>Recent Work</Text>
-          <View style={styles.postsGrid}>
-            {provider.posts.slice(0, 3).map((post, index) => (
-              <View key={post.id} style={styles.postThumbnail}>
-                <Image
-                  source={{ uri: post.media[0]?.url }}
-                  style={styles.postThumbnailImage}
-                  resizeMode="cover"
-                />
-                {post.media[0]?.type === 'video' && (
-                  <View style={styles.videoIndicator}>
-                    <Ionicons name="play" size={12} color="white" />
+          <View style={styles.postsPreviewHeader}>
+            <Text style={[styles.postsPreviewTitle, { color: colors.text.primary }]}>
+              Recent Work
+            </Text>
+            <Text style={[styles.postsCount, { color: colors.text.secondary }]}>
+              {provider.posts.length} posts
+            </Text>
+          </View>
+          
+          <View style={styles.postsScrollContainer}>
+            <FlatList
+              data={provider.posts.slice(0, 6)}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(post) => post.id.toString()}
+              contentContainerStyle={styles.postsScrollContent}
+              renderItem={({ item: post, index }) => (
+                <TouchableOpacity 
+                  style={[styles.postThumbnail, { 
+                    backgroundColor: colors.background.tertiary,
+                    borderColor: colors.border.primary,
+                  }]}
+                  onPress={() => {
+                    // Future: Navigate to post detail or provider posts
+                    navigation.navigate('ProviderDetail', { providerId: provider.id });
+                  }}
+                >
+                  {post.media && post.media.length > 0 ? (
+                    <Image
+                      source={{ uri: post.media[0].url }}
+                      style={styles.postThumbnailImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={[styles.postPlaceholder, { backgroundColor: colors.background.tertiary }]}>
+                      <Ionicons name="image" size={20} color={colors.text.secondary} />
+                    </View>
+                  )}
+                  
+                  {/* Media indicators */}
+                  {post.media && post.media[0]?.type === 'video' && (
+                    <View style={styles.videoIndicator}>
+                      <Ionicons name="play" size={12} color="white" />
+                    </View>
+                  )}
+                  {post.media && post.media.length > 1 && (
+                    <View style={styles.multipleMediaIndicator}>
+                      <Ionicons name="copy" size={12} color="white" />
+                    </View>
+                  )}
+                  
+                  {/* Post engagement overlay */}
+                  <View style={styles.postEngagement}>
+                    <View style={styles.postEngagementItem}>
+                      <Ionicons name="heart" size={10} color="white" />
+                      <Text style={styles.postEngagementText}>
+                        {Math.floor(Math.random() * 50) + 1}
+                      </Text>
+                    </View>
                   </View>
-                )}
-                {post.media.length > 1 && (
-                  <View style={styles.multipleMediaIndicator}>
-                    <Ionicons name="copy" size={12} color="white" />
-                  </View>
-                )}
-              </View>
-            ))}
-            {provider.posts.length > 3 && (
-              <View style={styles.morePostsIndicator}>
-                <Text style={styles.morePostsText}>+{provider.posts.length - 3}</Text>
-              </View>
+                </TouchableOpacity>
+              )}
+            />
+            
+            {provider.posts.length > 6 && (
+              <TouchableOpacity 
+                style={[styles.viewAllPostsButton, { 
+                  backgroundColor: colors.primary,
+                  borderColor: colors.primary,
+                }]}
+                onPress={() => navigation.navigate('ProviderDetail', { providerId: provider.id })}
+              >
+                <Text style={[styles.viewAllPostsText, { color: colors.text.inverse }]}>
+                  View All
+                </Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.text.inverse} />
+              </TouchableOpacity>
             )}
           </View>
         </View>
       )}
 
+      {/* Services and pricing */}
       {provider.services.length > 0 && (
-        <View style={styles.servicesPreview}>
-          <Text style={styles.servicePreviewText}>
+        <View style={[styles.servicesPreview, { borderTopColor: colors.border.primary }]}>
+          <Text style={[styles.servicePreviewText, { color: colors.status.success }]}>
             Starting from ${Math.min(...provider.services.map(s => s.price))}
           </Text>
         </View>
@@ -270,52 +336,71 @@ const SearchScreen: React.FC = () => {
 
   const renderFilterModal = () => (
     <Modal visible={showFilters} animationType="slide" presentationStyle="pageSheet">
-      <SafeAreaView style={styles.filterModal}>
-        <View style={styles.filterHeader}>
+      <SafeAreaView style={[styles.filterModal, { backgroundColor: colors.background.primary }]}>
+        <View style={[styles.filterHeader, { 
+          backgroundColor: colors.background.secondary, 
+          borderBottomColor: colors.border.primary 
+        }]}>
           <TouchableOpacity onPress={() => setShowFilters(false)}>
-            <Text style={styles.filterCancelText}>Cancel</Text>
+            <Text style={[styles.filterCancelText, { color: colors.text.secondary }]}>
+              Cancel
+            </Text>
           </TouchableOpacity>
-          <Text style={styles.filterTitle}>Filters</Text>
+          <Text style={[styles.filterTitle, { color: colors.text.primary }]}>
+            Filters
+          </Text>
           <TouchableOpacity onPress={() => setShowFilters(false)}>
-            <Text style={styles.filterApplyText}>Apply</Text>
+            <Text style={[styles.filterApplyText, { color: colors.primary }]}>
+              Apply
+            </Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.filterContent}>
           <View style={styles.filterSection}>
-            <Text style={styles.filterSectionTitle}>Sort By</Text>
+            <Text style={[styles.filterSectionTitle, { color: colors.text.primary }]}>
+              Sort By
+            </Text>
             {['distance', 'rating', 'popularity'].map((sortOption) => (
               <TouchableOpacity
                 key={sortOption}
-                style={styles.filterOption}
+                style={[styles.filterOption, { 
+                  backgroundColor: colors.background.secondary,
+                  borderColor: colors.border.primary,
+                }]}
                 onPress={() => setFilters(prev => ({ ...prev, sortBy: sortOption as any }))}
               >
-                <Text style={styles.filterOptionText}>
+                <Text style={[styles.filterOptionText, { color: colors.text.primary }]}>
                   {sortOption.charAt(0).toUpperCase() + sortOption.slice(1)}
                 </Text>
                 {filters.sortBy === sortOption && (
-                  <Ionicons name="checkmark" size={20} color="#8b5cf6" />
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
                 )}
               </TouchableOpacity>
             ))}
           </View>
 
           <View style={styles.filterSection}>
-            <Text style={styles.filterSectionTitle}>Minimum Rating</Text>
+            <Text style={[styles.filterSectionTitle, { color: colors.text.primary }]}>
+              Minimum Rating
+            </Text>
             {[0, 3, 4, 4.5].map((rating) => (
               <TouchableOpacity
                 key={rating}
-                style={styles.filterOption}
+                style={[styles.filterOption, { 
+                  backgroundColor: colors.background.secondary,
+                  borderColor: colors.border.primary,
+                }]}
                 onPress={() => setFilters(prev => ({ ...prev, minRating: rating }))}
               >
                 <View style={styles.ratingFilterOption}>
-                  <Text style={styles.filterOptionText}>
+                  <Text style={[styles.filterOptionText, { color: colors.text.primary }]}>
                     {rating === 0 ? 'Any Rating' : `${rating}+ Stars`}
                   </Text>
                   {rating > 0 && renderStars(rating)}
                 </View>
                 {filters.minRating === rating && (
-                  <Ionicons name="checkmark" size={20} color="#8b5cf6" />
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
                 )}
               </TouchableOpacity>
             ))}
@@ -326,66 +411,83 @@ const SearchScreen: React.FC = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Find Providers</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <View style={[styles.header, { backgroundColor: colors.background.primary, borderBottomColor: colors.border.primary }]}>
+        <Text style={[styles.title, { color: colors.text.primary }]}>Find Providers</Text>
+        <DarkModeToggle size={24} />
       </View>
 
-      <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <Ionicons name="search" size={20} color="#9ca3af" />
+      <View style={[styles.searchContainer, { backgroundColor: colors.background.primary }]}>
+        <View style={[styles.searchInputContainer, { backgroundColor: colors.background.secondary, borderColor: colors.border.primary }]}>
+          <Ionicons name="search" size={20} color={colors.text.secondary} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.text.primary }]}
             placeholder="Search by name, service, or location..."
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.text.secondary}
           />
         </View>
         
         <TouchableOpacity
-          style={styles.filterButton}
+          style={[styles.filterButton, { backgroundColor: colors.background.secondary, borderColor: colors.border.primary }]}
           onPress={() => setShowFilters(true)}
         >
-          <Ionicons name="options" size={20} color="#8b5cf6" />
+          <Ionicons name="options" size={20} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
       {/* View Toggle */}
-      <View style={styles.viewToggleContainer}>
+      <View style={[styles.viewToggleContainer, { backgroundColor: colors.background.tertiary }]}>
         <TouchableOpacity
-          style={[styles.viewToggleButton, viewMode === 'list' && styles.viewToggleButtonActive]}
+          style={[
+            styles.viewToggleButton, 
+            { backgroundColor: colors.background.secondary, borderColor: colors.border.primary },
+            viewMode === 'list' && { backgroundColor: colors.primary }
+          ]}
           onPress={() => setViewMode('list')}
         >
           <Ionicons 
             name="list" 
             size={20} 
-            color={viewMode === 'list' ? '#ffffff' : '#8b5cf6'} 
+            color={viewMode === 'list' ? colors.text.inverse : colors.primary} 
           />
-          <Text style={[styles.viewToggleText, viewMode === 'list' && styles.viewToggleTextActive]}>
+          <Text style={[
+            styles.viewToggleText, 
+            { color: viewMode === 'list' ? colors.text.inverse : colors.primary }
+          ]}>
             List
           </Text>
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={[styles.viewToggleButton, viewMode === 'map' && styles.viewToggleButtonActive]}
+          style={[
+            styles.viewToggleButton, 
+            { backgroundColor: colors.background.secondary, borderColor: colors.border.primary },
+            viewMode === 'map' && { backgroundColor: colors.primary }
+          ]}
           onPress={() => setViewMode('map')}
         >
           <Ionicons 
             name="map" 
             size={20} 
-            color={viewMode === 'map' ? '#ffffff' : '#8b5cf6'} 
+            color={viewMode === 'map' ? colors.text.inverse : colors.primary} 
           />
-          <Text style={[styles.viewToggleText, viewMode === 'map' && styles.viewToggleTextActive]}>
+          <Text style={[
+            styles.viewToggleText, 
+            { color: viewMode === 'map' ? colors.text.inverse : colors.primary }
+          ]}>
             Map
           </Text>
         </TouchableOpacity>
       </View>
 
       {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8b5cf6" />
-          <Text style={styles.loadingText}>Searching providers...</Text>
+        <View style={[styles.loadingContainer, { backgroundColor: colors.background.primary }]}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
+            Searching providers...
+          </Text>
         </View>
       ) : viewMode === 'list' ? (
         <FlatList
@@ -395,10 +497,12 @@ const SearchScreen: React.FC = () => {
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Ionicons name="search" size={64} color="#d1d5db" />
-              <Text style={styles.emptyStateTitle}>No providers found</Text>
-              <Text style={styles.emptyStateSubtitle}>
+            <View style={[styles.emptyState, { backgroundColor: colors.background.primary }]}>
+              <Ionicons name="search" size={64} color={colors.text.tertiary} />
+              <Text style={[styles.emptyStateTitle, { color: colors.text.primary }]}>
+                No providers found
+              </Text>
+              <Text style={[styles.emptyStateSubtitle, { color: colors.text.secondary }]}>
                 Try adjusting your search criteria or filters
               </Text>
             </View>
@@ -423,21 +527,24 @@ const SearchScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 24,
     paddingTop: 20,
     paddingBottom: 16,
+    borderBottomWidth: 1,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1a1a1a',
   },
   searchContainer: {
     flexDirection: 'row',
     paddingHorizontal: 24,
+    paddingTop: 16,
     marginBottom: 16,
     gap: 12,
   },
@@ -445,24 +552,23 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 12,
+    borderWidth: 1,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#1f2937',
   },
   filterButton: {
-    backgroundColor: 'white',
     borderRadius: 12,
     width: 48,
     height: 48,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -472,25 +578,23 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
   },
   listContainer: {
     paddingHorizontal: 24,
     paddingBottom: 24,
   },
   providerCard: {
-    backgroundColor: 'white',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 2,
   },
   providerHeader: {
     flexDirection: 'row',
@@ -513,7 +617,6 @@ const styles = StyleSheet.create({
   providerName: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1f2937',
     marginRight: 8,
   },
   onlineIndicator: {
@@ -533,16 +636,13 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 14,
-    color: '#6b7280',
   },
   distanceText: {
     fontSize: 14,
-    color: '#8b5cf6',
     fontWeight: '500',
   },
   providerBio: {
     fontSize: 14,
-    color: '#6b7280',
     lineHeight: 20,
     marginBottom: 12,
   },
@@ -562,7 +662,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   moreTagsIndicator: {
-    backgroundColor: '#f3f4f6',
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -570,73 +669,113 @@ const styles = StyleSheet.create({
   },
   moreTagsText: {
     fontSize: 12,
-    color: '#6b7280',
     fontWeight: '500',
   },
-  // Posts Preview Styles
+  // Enhanced Posts Preview Styles
   postsPreview: {
     marginBottom: 12,
   },
-  postsPreviewTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 8,
-  },
-  postsGrid: {
+  postsPreviewHeader: {
     flexDirection: 'row',
-    gap: 6,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  postsPreviewTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  postsCount: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  postsScrollContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  postsScrollContent: {
+    paddingRight: 8,
   },
   postThumbnail: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
+    width: 80,
+    height: 80,
+    borderRadius: 12,
     overflow: 'hidden',
     position: 'relative',
+    marginRight: 8,
+    borderWidth: 1,
   },
   postThumbnailImage: {
     width: '100%',
     height: '100%',
   },
+  postPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   videoIndicator: {
     position: 'absolute',
-    top: 4,
-    left: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 8,
-    padding: 2,
+    top: 6,
+    left: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 10,
+    padding: 3,
   },
   multipleMediaIndicator: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 8,
-    padding: 2,
+    top: 6,
+    right: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 10,
+    padding: 3,
   },
-  morePostsIndicator: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-    justifyContent: 'center',
+  postEngagement: {
+    position: 'absolute',
+    bottom: 6,
+    left: 6,
+    right: 6,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
   },
-  morePostsText: {
+  postEngagementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    gap: 2,
+  },
+  postEngagementText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  viewAllPostsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    gap: 4,
+    borderWidth: 1,
+    minWidth: 80,
+  },
+  viewAllPostsText: {
     fontSize: 12,
-    color: '#6b7280',
     fontWeight: '600',
   },
   servicesPreview: {
     borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
     paddingTop: 12,
   },
   servicePreviewText: {
     fontSize: 16,
-    color: '#059669',
     fontWeight: '600',
   },
   emptyState: {
@@ -648,18 +787,15 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#374151',
     marginTop: 16,
     marginBottom: 8,
   },
   emptyStateSubtitle: {
     fontSize: 16,
-    color: '#6b7280',
     textAlign: 'center',
   },
   filterModal: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   filterHeader: {
     flexDirection: 'row',
@@ -668,21 +804,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    backgroundColor: 'white',
   },
   filterCancelText: {
     fontSize: 16,
-    color: '#6b7280',
   },
   filterTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1f2937',
   },
   filterApplyText: {
     fontSize: 16,
-    color: '#8b5cf6',
     fontWeight: '600',
   },
   filterContent: {
@@ -696,21 +827,19 @@ const styles = StyleSheet.create({
   filterSectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1f2937',
     marginBottom: 16,
   },
   filterOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
     marginBottom: 8,
+    borderWidth: 1,
   },
   filterOptionText: {
     fontSize: 16,
-    color: '#374151',
   },
   ratingFilterOption: {
     flexDirection: 'row',
@@ -721,7 +850,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginHorizontal: 24,
     marginBottom: 16,
-    backgroundColor: '#f3f4f6',
     borderRadius: 12,
     padding: 4,
   },
@@ -734,23 +862,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     gap: 6,
-  },
-  viewToggleButtonActive: {
-    backgroundColor: '#8b5cf6',
+    borderWidth: 1,
   },
   viewToggleText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#8b5cf6',
-  },
-  viewToggleTextActive: {
-    color: '#ffffff',
   },
   mapContainer: {
     flex: 1,
-    margin: 24,
-    borderRadius: 12,
-    overflow: 'hidden',
   },
   map: {
     flex: 1,

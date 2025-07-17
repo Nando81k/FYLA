@@ -14,14 +14,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useAuth } from '@/context/AuthContext';
-import { useBooking } from '@/context/BookingContext';
-import { useNotifications } from '@/context/NotificationContext';
-import { useTimeSlot } from '@/context/TimeSlotContext';
+import { useAuth } from '../../context/AuthContext';
+import { useBooking } from '../../context/BookingContext';
+import { useNotifications } from '../../context/NotificationContext';
+import { useTimeSlot } from '../../context/TimeSlotContext';
 import {
   ProviderProfile,
   Service,
-} from '@/types';
+} from '../../types';
 import {
   BookingRequest,
   BookingType,
@@ -29,10 +29,10 @@ import {
   RecurrenceConfig,
   ServiceDetails,
   BookingValidation,
-  TimeSlot,
+  TimeSlot as BookingTimeSlot, // Rename to avoid conflict
   BookingPackage,
-} from '@/types/booking';
-import { TimeSlot as TimeSlotType } from '@/types/timeSlot';
+} from '../../types/booking';
+import { TimeSlot } from '../../types/timeSlot'; // Use this for TimeSlotPicker
 import TimeSlotPicker from './TimeSlotPicker';
 
 const { width } = Dimensions.get('window');
@@ -281,7 +281,7 @@ const AdvancedBookingModal: React.FC<AdvancedBookingModalProps> = ({
     }
   };
 
-  const handleTimeSlotSelected = useCallback(async (slot: TimeSlotType) => {
+  const handleTimeSlotSelected = useCallback(async (slot: TimeSlot) => {
     try {
       // Reserve the slot temporarily
       await reserveSlot({
@@ -573,16 +573,18 @@ const AdvancedBookingModal: React.FC<AdvancedBookingModalProps> = ({
       </View>
 
       {/* TimeSlot Picker Modal */}
-      <TimeSlotPicker
-        visible={showTimeSlotPicker}
-        onClose={() => setShowTimeSlotPicker(false)}
-        onSlotSelected={handleTimeSlotSelected}
-        providerId={provider.id}
-        serviceId={selectedServices[0]?.id || 1}
-        serviceDuration={selectedServices.reduce((sum, service) => sum + (service.estimatedDurationMinutes || 60), 0)} // Default to 60 min if no duration
-        clientId={user.id}
-        initialDate={selectedDate.toISOString().split('T')[0]}
-      />
+      {user?.id && provider?.id && selectedServices?.length > 0 && (
+        <TimeSlotPicker
+          visible={!!showTimeSlotPicker}
+          onClose={() => setShowTimeSlotPicker(false)}
+          onSlotSelected={handleTimeSlotSelected}
+          providerId={Number(provider.id)}
+          serviceId={Number(selectedServices[0]?.id) || 1}
+          serviceDuration={selectedServices.reduce((sum, service) => sum + (Number(service.estimatedDurationMinutes) || 60), 0)}
+          clientId={Number(user.id)}
+          initialDate={selectedDate ? selectedDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+        />
+      )}
     </View>
   );
 

@@ -1,12 +1,28 @@
 import { ServiceFactory } from './apiService';
 import { FEATURE_FLAGS } from '@/config/api';
-import { Service, TimeSlot, Appointment, AppointmentStatus } from '@/types';
+import { Service, Appointment, AppointmentStatus } from '@/types';
+
+// Define TimeSlot interface for this service
+export interface TimeSlot {
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+  reason?: string;
+}
 
 export interface CreateServiceRequest {
   name: string;
   description?: string;
   price: number;
   estimatedDurationMinutes: number;
+  isActive?: boolean;
+}
+
+export interface UpdateServiceRequest {
+  name?: string;
+  description?: string;
+  price?: number;
+  estimatedDurationMinutes?: number;
   isActive?: boolean;
 }
 
@@ -50,6 +66,42 @@ class ServiceService {
     );
   }
 
+  async createService(token: string, request: CreateServiceRequest): Promise<Service> {
+    console.log('🔧 createService called with flag:', FEATURE_FLAGS.USE_REAL_PROVIDER_API);
+    return await ServiceFactory.executeWithFallback(
+      FEATURE_FLAGS.USE_REAL_PROVIDER_API,
+      () => this.createServiceReal(token, request),
+      () => this.createServiceMock(token, request)
+    );
+  }
+
+  async updateService(token: string, serviceId: number, request: UpdateServiceRequest): Promise<Service> {
+    console.log('🔧 updateService called with flag:', FEATURE_FLAGS.USE_REAL_PROVIDER_API);
+    return await ServiceFactory.executeWithFallback(
+      FEATURE_FLAGS.USE_REAL_PROVIDER_API,
+      () => this.updateServiceReal(token, serviceId, request),
+      () => this.updateServiceMock(token, serviceId, request)
+    );
+  }
+
+  async deleteService(token: string, serviceId: number): Promise<void> {
+    console.log('🗑️ deleteService called with flag:', FEATURE_FLAGS.USE_REAL_PROVIDER_API);
+    return await ServiceFactory.executeWithFallback(
+      FEATURE_FLAGS.USE_REAL_PROVIDER_API,
+      () => this.deleteServiceReal(token, serviceId),
+      () => this.deleteServiceMock(token, serviceId)
+    );
+  }
+
+  async toggleServiceStatus(token: string, serviceId: number, isActive: boolean): Promise<Service> {
+    console.log('🔄 toggleServiceStatus called with flag:', FEATURE_FLAGS.USE_REAL_PROVIDER_API);
+    return await ServiceFactory.executeWithFallback(
+      FEATURE_FLAGS.USE_REAL_PROVIDER_API,
+      () => this.toggleServiceStatusReal(token, serviceId, isActive),
+      () => this.toggleServiceStatusMock(token, serviceId, isActive)
+    );
+  }
+
   async createBooking(request: CreateBookingRequest): Promise<Appointment> {
     console.log('🔍 createBooking called with flag:', FEATURE_FLAGS.USE_REAL_APPOINTMENT_API);
     return await ServiceFactory.executeWithFallback(
@@ -85,6 +137,37 @@ class ServiceService {
     });
     
     return response;
+  }
+
+  private async createServiceReal(token: string, request: CreateServiceRequest): Promise<Service> {
+    const apiService = ServiceFactory.getApiService();
+    const response = await apiService.post<{ data: Service }>('/services', request, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  }
+
+  private async updateServiceReal(token: string, serviceId: number, request: UpdateServiceRequest): Promise<Service> {
+    const apiService = ServiceFactory.getApiService();
+    const response = await apiService.put<{ data: Service }>(`/services/${serviceId}`, request, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  }
+
+  private async deleteServiceReal(token: string, serviceId: number): Promise<void> {
+    const apiService = ServiceFactory.getApiService();
+    await apiService.delete(`/services/${serviceId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  }
+
+  private async toggleServiceStatusReal(token: string, serviceId: number, isActive: boolean): Promise<Service> {
+    const apiService = ServiceFactory.getApiService();
+    const response = await apiService.put<{ data: Service }>(`/services/${serviceId}`, { isActive }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
   }
 
   private async createBookingReal(request: CreateBookingRequest): Promise<Appointment> {
@@ -135,6 +218,59 @@ class ServiceService {
     };
   }
 
+  private async createServiceMock(token: string, request: CreateServiceRequest): Promise<Service> {
+    console.log('🎭 Creating service via MOCK API');
+    await ServiceFactory.getApiService().simulateMockDelay();
+    
+    return {
+      id: Math.floor(Math.random() * 1000),
+      providerId: 1,
+      name: request.name,
+      description: request.description || '',
+      price: request.price,
+      estimatedDurationMinutes: request.estimatedDurationMinutes,
+      isActive: request.isActive !== undefined ? request.isActive : true,
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  private async updateServiceMock(token: string, serviceId: number, request: UpdateServiceRequest): Promise<Service> {
+    console.log('🎭 Updating service via MOCK API');
+    await ServiceFactory.getApiService().simulateMockDelay();
+    
+    return {
+      id: serviceId,
+      providerId: 1,
+      name: request.name || 'Mock Service',
+      description: request.description || 'Mock service description',
+      price: request.price || 100,
+      estimatedDurationMinutes: request.estimatedDurationMinutes || 60,
+      isActive: request.isActive !== undefined ? request.isActive : true,
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  private async deleteServiceMock(token: string, serviceId: number): Promise<void> {
+    console.log('🎭 Deleting service via MOCK API');
+    await ServiceFactory.getApiService().simulateMockDelay();
+  }
+
+  private async toggleServiceStatusMock(token: string, serviceId: number, isActive: boolean): Promise<Service> {
+    console.log('🎭 Toggling service status via MOCK API');
+    await ServiceFactory.getApiService().simulateMockDelay();
+    
+    return {
+      id: serviceId,
+      providerId: 1,
+      name: 'Mock Service',
+      description: 'Mock service description',
+      price: 100,
+      estimatedDurationMinutes: 60,
+      isActive,
+      createdAt: new Date().toISOString()
+    };
+  }
+
   private async createBookingMock(request: CreateBookingRequest): Promise<Appointment> {
     console.log('🎭 Creating booking via MOCK API');
     await ServiceFactory.getApiService().simulateMockDelay();
@@ -147,8 +283,6 @@ class ServiceService {
       id: Math.floor(Math.random() * 1000),
       clientId: 1,
       providerId: request.providerId,
-      clientName: 'Mock Client',
-      providerName: 'Mock Provider',
       scheduledStartTime: startTime.toISOString(),
       scheduledEndTime: endTime.toISOString(),
       status: AppointmentStatus.PENDING,
@@ -179,9 +313,7 @@ class ServiceService {
           startTime: startTime.toISOString(),
           endTime: endTime.toISOString(),
           isAvailable: Math.random() > 0.3, // 70% available
-          reason: Math.random() > 0.3 ? undefined : 'Already booked',
-          totalPrice: 100,
-          totalDurationMinutes: 60
+          reason: Math.random() > 0.3 ? undefined : 'Already booked'
         });
       }
     }

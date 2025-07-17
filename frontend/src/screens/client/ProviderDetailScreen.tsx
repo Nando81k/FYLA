@@ -15,14 +15,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/theme/ThemeProvider';
 import { providerService } from '@/services/providerService';
 import { serviceService } from '@/services/serviceService';
-import { reviewService } from '@/services/reviewService';
 import { chatService } from '@/services/chatService';
 import { locationService } from '@/services/locationService';
-import { ProviderProfile, Service, BusinessHours, dayNames, Appointment } from '@/types';
-import AdvancedBookingModal from '@/components/booking/AdvancedBookingModal';
+import { ProviderProfile, Service, BusinessHours, dayNames, Appointment, UserRole } from '@/types';
+import ComprehensiveBookingModal from '../../components/booking/ComprehensiveBookingModal';
 import AIBookingRecommendations from '@/components/booking/AIBookingRecommendations';
+import DarkModeToggle from '@/components/shared/DarkModeToggle';
 
 type ProviderDetailRouteProp = RouteProp<
   { ProviderDetail: { providerId: number } },
@@ -33,6 +34,7 @@ const ProviderDetailScreen: React.FC = () => {
   const route = useRoute<ProviderDetailRouteProp>();
   const navigation = useNavigation();
   const { token, user } = useAuth();
+  const { colors, typography, spacing } = useTheme();
   const { providerId } = route.params;
 
   const [provider, setProvider] = useState<ProviderProfile | null>(null);
@@ -101,8 +103,64 @@ const ProviderDetailScreen: React.FC = () => {
 
     setReviewsLoading(true);
     try {
-      const reviewsData = await reviewService.getMockProviderReviews(provider.id);
-      setReviews(reviewsData.reviews);
+      // For now, use mock data since reviewService is not available
+      const mockReviews = [
+        {
+          id: 1,
+          appointmentId: 1,
+          clientId: 1,
+          providerId: provider.id,
+          rating: 5,
+          comment: "Great service! Very professional and friendly.",
+          createdAt: new Date().toISOString(),
+          client: {
+            id: 1,
+            fullName: "John Doe",
+            profilePictureUrl: "https://via.placeholder.com/40x40?text=JD",
+            role: UserRole.CLIENT,
+            email: 'john@example.com',
+            phoneNumber: '123-456-7890',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          provider: {
+            ...provider,
+            role: UserRole.PROVIDER,
+            email: provider.email || 'provider@example.com',
+            phoneNumber: provider.phoneNumber || '123-456-7890',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        },
+        {
+          id: 2,
+          appointmentId: 2,
+          clientId: 2,
+          providerId: provider.id,
+          rating: 4,
+          comment: "Good quality work, would recommend.",
+          createdAt: new Date().toISOString(),
+          client: {
+            id: 2,
+            fullName: "Jane Smith",
+            profilePictureUrl: "https://via.placeholder.com/40x40?text=JS",
+            role: UserRole.CLIENT,
+            email: 'jane@example.com',
+            phoneNumber: '123-456-7891',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          provider: {
+            ...provider,
+            role: UserRole.PROVIDER,
+            email: provider.email || 'provider@example.com',
+            phoneNumber: provider.phoneNumber || '123-456-7890',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        }
+      ];
+      setReviews(mockReviews);
     } catch (error) {
       Alert.alert(
         'Error',
@@ -232,7 +290,7 @@ const ProviderDetailScreen: React.FC = () => {
   };
 
   const renderReviewItem = ({ item: review }: { item: import('@/types').Review }) => (
-    <View style={styles.reviewCard}>
+    <View style={[styles.reviewCard, { backgroundColor: colors.background.secondary }]}>
       <View style={styles.reviewHeader}>
         <Image
           source={{
@@ -241,17 +299,17 @@ const ProviderDetailScreen: React.FC = () => {
           style={styles.reviewerImage}
         />
         <View style={styles.reviewerInfo}>
-          <Text style={styles.reviewerName}>{review.client?.fullName || 'Anonymous'}</Text>
+          <Text style={[styles.reviewerName, { color: colors.text.primary }]}>{review.client?.fullName || 'Anonymous'}</Text>
           <View style={styles.reviewRating}>
             {renderStars(review.rating)}
-            <Text style={styles.reviewDate}>
+            <Text style={[styles.reviewDate, { color: colors.text.secondary }]}>
               {new Date(review.createdAt).toLocaleDateString()}
             </Text>
           </View>
         </View>
       </View>
       {review.comment && (
-        <Text style={styles.reviewComment}>{review.comment}</Text>
+        <Text style={[styles.reviewComment, { color: colors.text.secondary }]}>{review.comment}</Text>
       )}
     </View>
   );
@@ -260,8 +318,8 @@ const ProviderDetailScreen: React.FC = () => {
     if (reviewsLoading) {
       return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color="#8b5cf6" />
-          <Text style={styles.loadingText}>Loading reviews...</Text>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.text.secondary }]}>Loading reviews...</Text>
         </View>
       );
     }
@@ -269,9 +327,9 @@ const ProviderDetailScreen: React.FC = () => {
     if (reviews.length === 0) {
       return (
         <View style={styles.emptyReviews}>
-          <Ionicons name="star-outline" size={48} color="#d1d5db" />
-          <Text style={styles.emptyReviewsTitle}>No Reviews Yet</Text>
-          <Text style={styles.emptyReviewsSubtitle}>
+          <Ionicons name="star-outline" size={48} color={colors.text.secondary} />
+          <Text style={[styles.emptyReviewsTitle, { color: colors.text.primary }]}>No Reviews Yet</Text>
+          <Text style={[styles.emptyReviewsSubtitle, { color: colors.text.secondary }]}>
             Be the first to leave a review for this provider!
           </Text>
         </View>
@@ -295,27 +353,43 @@ const ProviderDetailScreen: React.FC = () => {
     return (
       <TouchableOpacity 
         key={service.id} 
-        style={[styles.serviceCard, isSelected && styles.serviceCardSelected]}
+        style={[
+          styles.serviceCard, 
+          { backgroundColor: colors.background.secondary, borderColor: colors.border.primary },
+          isSelected && { borderColor: colors.primary, backgroundColor: colors.background.tertiary }
+        ]}
         onPress={() => handleServiceToggle(service)}
       >
         <View style={styles.serviceHeader}>
           <View style={styles.serviceInfo}>
-            <Text style={styles.serviceName}>{service.name}</Text>
-            <Text style={styles.servicePrice}>${service.price.toFixed(2)}</Text>
+            <Text style={[styles.serviceName, { color: colors.text.primary }]}>{service.name}</Text>
+            <Text style={[styles.servicePrice, { color: colors.accent }]}>${service.price.toFixed(2)}</Text>
           </View>
-          <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+          <View style={[
+            styles.checkbox, 
+            { borderColor: colors.border.primary },
+            isSelected && { backgroundColor: colors.primary, borderColor: colors.primary }
+          ]}>
             {isSelected && (
-              <Ionicons name="checkmark" size={16} color="white" />
+              <Ionicons name="checkmark" size={16} color={colors.text.inverse} />
             )}
           </View>
         </View>
         {service.description && (
-          <Text style={styles.serviceDescription}>{service.description}</Text>
+          <Text style={[styles.serviceDescription, { color: colors.text.secondary }]}>{service.description}</Text>
         )}
         <View style={styles.serviceFooter}>
-          <Text style={styles.serviceDuration}>
-            {formatDuration(service.estimatedDurationMinutes)}
-          </Text>
+          <View style={styles.serviceDurationContainer}>
+            <Ionicons name="time-outline" size={16} color={colors.primary} />
+            <Text style={[styles.serviceDuration, { color: colors.primary }]}>
+              {formatDuration(service.estimatedDurationMinutes)}
+            </Text>
+          </View>
+          {isSelected && (
+            <View style={[styles.selectedBadge, { backgroundColor: colors.primary }]}>
+              <Text style={[styles.selectedBadgeText, { color: colors.text.inverse }]}>Selected</Text>
+            </View>
+          )}
         </View>
       </TouchableOpacity>
     );
@@ -324,7 +398,7 @@ const ProviderDetailScreen: React.FC = () => {
   const renderBusinessHours = () => {
     if (!provider?.businessHours || provider.businessHours.length === 0) {
       return (
-        <Text style={styles.noHoursText}>Business hours not available</Text>
+        <Text style={[styles.noHoursText, { color: colors.text.secondary }]}>Business hours not available</Text>
       );
     }
 
@@ -334,8 +408,8 @@ const ProviderDetailScreen: React.FC = () => {
           const dayHours = provider.businessHours.find(bh => bh.dayOfWeek === index);
           return (
             <View key={day} style={styles.businessHourRow}>
-              <Text style={styles.dayText}>{day}</Text>
-              <Text style={styles.hoursText}>
+              <Text style={[styles.dayText, { color: colors.text.primary }]}>{day}</Text>
+              <Text style={[styles.hoursText, { color: colors.text.secondary }]}>
                 {dayHours?.isOpen 
                   ? `${formatTime(dayHours.openTime)} - ${formatTime(dayHours.closeTime)}`
                   : 'Closed'
@@ -357,8 +431,8 @@ const ProviderDetailScreen: React.FC = () => {
           return (
             <View style={styles.tabContent}>
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#8b5cf6" />
-                <Text style={styles.loadingText}>Loading services...</Text>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={[styles.loadingText, { color: colors.text.secondary }]}>Loading services...</Text>
               </View>
             </View>
           );
@@ -368,9 +442,9 @@ const ProviderDetailScreen: React.FC = () => {
           return (
             <View style={styles.tabContent}>
               <View style={styles.emptyReviews}>
-                <Ionicons name="list-outline" size={48} color="#d1d5db" />
-                <Text style={styles.emptyReviewsTitle}>No Services Available</Text>
-                <Text style={styles.emptyReviewsSubtitle}>
+                <Ionicons name="list-outline" size={48} color={colors.text.secondary} />
+                <Text style={[styles.emptyReviewsTitle, { color: colors.text.primary }]}>No Services Available</Text>
+                <Text style={[styles.emptyReviewsSubtitle, { color: colors.text.secondary }]}>
                   This provider hasn't added any services yet.
                 </Text>
               </View>
@@ -400,36 +474,36 @@ const ProviderDetailScreen: React.FC = () => {
           <View style={styles.tabContent}>
             {provider.bio && (
               <View style={styles.aboutSection}>
-                <Text style={styles.aboutSectionTitle}>About</Text>
-                <Text style={styles.aboutText}>{provider.bio}</Text>
+                <Text style={[styles.aboutSectionTitle, { color: colors.text.primary }]}>About</Text>
+                <Text style={[styles.aboutText, { color: colors.text.secondary }]}>{provider.bio}</Text>
               </View>
             )}
             
             <View style={styles.aboutSection}>
-              <Text style={styles.aboutSectionTitle}>Specialties</Text>
+              <Text style={[styles.aboutSectionTitle, { color: colors.text.primary }]}>Specialties</Text>
               <View style={styles.tagsContainer}>
                 {provider.tags.map((tag) => (
-                  <View key={tag.id} style={styles.tag}>
-                    <Text style={styles.tagText}>{tag.name}</Text>
+                  <View key={tag.id} style={[styles.tag, { backgroundColor: colors.background.tertiary }]}>
+                    <Text style={[styles.tagText, { color: colors.text.primary }]}>{tag.name}</Text>
                   </View>
                 ))}
               </View>
             </View>
 
             <View style={styles.aboutSection}>
-              <Text style={styles.aboutSectionTitle}>Business Hours</Text>
+              <Text style={[styles.aboutSectionTitle, { color: colors.text.primary }]}>Business Hours</Text>
               {renderBusinessHours()}
             </View>
 
             <View style={styles.aboutSection}>
-              <Text style={styles.aboutSectionTitle}>Contact</Text>
+              <Text style={[styles.aboutSectionTitle, { color: colors.text.primary }]}>Contact</Text>
               <TouchableOpacity style={styles.contactRow}>
-                <Ionicons name="call" size={20} color="#8b5cf6" />
-                <Text style={styles.contactText}>{provider.phoneNumber}</Text>
+                <Ionicons name="call" size={20} color={colors.primary} />
+                <Text style={[styles.contactText, { color: colors.text.primary }]}>{provider.phoneNumber}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.contactRow}>
-                <Ionicons name="mail" size={20} color="#8b5cf6" />
-                <Text style={styles.contactText}>{provider.email}</Text>
+                <Ionicons name="mail" size={20} color={colors.primary} />
+                <Text style={[styles.contactText, { color: colors.text.primary }]}>{provider.email}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -449,10 +523,10 @@ const ProviderDetailScreen: React.FC = () => {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8b5cf6" />
-          <Text style={styles.loadingText}>Loading provider details...</Text>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.text.secondary }]}>Loading provider details...</Text>
         </View>
       </SafeAreaView>
     );
@@ -460,104 +534,145 @@ const ProviderDetailScreen: React.FC = () => {
 
   if (!provider) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Provider not found</Text>
+          <Text style={[styles.errorText, { color: colors.status.error }]}>Provider not found</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#1f2937" />
+      <View style={[styles.header, { backgroundColor: colors.background.primary }]}>
+        <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.background.secondary }]} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.favoriteButton}>
-          <Ionicons name="heart-outline" size={24} color="#1f2937" />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={[styles.favoriteButton, { backgroundColor: colors.background.secondary }]}>
+            <Ionicons name="heart-outline" size={24} color={colors.text.primary} />
+          </TouchableOpacity>
+          <DarkModeToggle size={24} style={styles.darkModeToggle} />
+        </View>
       </View>
 
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {/* Provider Info */}
-        <View style={styles.providerSection}>
-          <Image
-            source={{
-              uri: provider.profilePictureUrl || 'https://via.placeholder.com/100x100?text=?',
-            }}
-            style={styles.providerImage}
-          />
+        <View style={[styles.providerSection, { backgroundColor: colors.background.secondary }]}>
+          <View style={styles.providerImageContainer}>
+            <Image
+              source={{
+                uri: provider.profilePictureUrl || 'https://via.placeholder.com/100x100?text=?',
+              }}
+              style={styles.providerImage}
+            />
+            {provider.isOnline && <View style={[styles.onlineIndicator, { backgroundColor: colors.accent }]} />}
+          </View>
           
           <View style={styles.providerInfo}>
-            <View style={styles.providerNameRow}>
-              <Text style={styles.providerName}>{provider.fullName}</Text>
-              {provider.isOnline && <View style={styles.onlineIndicator} />}
-            </View>
+            <Text style={[styles.providerName, { color: colors.text.primary }]}>{provider.fullName}</Text>
             
             <View style={styles.ratingRow}>
               {renderStars(provider.averageRating)}
-              <Text style={styles.ratingText}>
+              <Text style={[styles.ratingText, { color: colors.text.secondary }]}>
                 {provider.averageRating} ({provider.totalReviews} reviews)
               </Text>
             </View>
 
             {provider.distance && (
-              <Text style={styles.distanceText}>
-                {provider.distance < 1 
-                  ? `${Math.round(provider.distance * 1000)}m away`
-                  : `${provider.distance.toFixed(1)}km away`
-                }
-              </Text>
+              <View style={styles.distanceRow}>
+                <Ionicons name="location-outline" size={16} color={colors.primary} />
+                <Text style={[styles.distanceText, { color: colors.primary }]}>
+                  {provider.distance < 1 
+                    ? `${Math.round(provider.distance * 1000)}m away`
+                    : `${provider.distance.toFixed(1)}km away`
+                  }
+                </Text>
+              </View>
             )}
+
+            {/* Service Tags Preview */}
+            <View style={styles.tagsPreview}>
+              {provider.tags.slice(0, 3).map((tag) => (
+                <View key={tag.id} style={[styles.tagChip, { backgroundColor: colors.primary }]}>
+                  <Text style={[styles.tagChipText, { color: colors.text.inverse }]}>{tag.name}</Text>
+                </View>
+              ))}
+              {provider.tags.length > 3 && (
+                <Text style={[styles.moreTagsText, { color: colors.text.secondary }]}>
+                  +{provider.tags.length - 3} more
+                </Text>
+              )}
+            </View>
           </View>
         </View>
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
           <TouchableOpacity 
-            style={styles.messageButton}
+            style={[styles.messageButton, { backgroundColor: colors.background.secondary, borderColor: colors.primary }]}
             onPress={handleMessageProvider}
           >
-            <Ionicons name="chatbubble-outline" size={20} color="#8b5cf6" />
-            <Text style={styles.messageButtonText}>Message</Text>
+            <Ionicons name="chatbubble-outline" size={20} color={colors.primary} />
+            <Text style={[styles.messageButtonText, { color: colors.primary }]}>Message</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={styles.directionsButton}
+            style={[styles.directionsButton, { backgroundColor: colors.background.secondary, borderColor: colors.primary }]}
             onPress={handleDirections}
           >
-            <Ionicons name="location-outline" size={20} color="#8b5cf6" />
-            <Text style={styles.directionsButtonText}>Directions</Text>
+            <Ionicons name="location-outline" size={20} color={colors.primary} />
+            <Text style={[styles.directionsButtonText, { color: colors.primary }]}>Directions</Text>
           </TouchableOpacity>
         </View>
 
         {/* Tabs */}
-        <View style={styles.tabsContainer}>
+        <View style={[styles.tabsContainer, { backgroundColor: colors.background.secondary }]}>
           <TouchableOpacity
-            style={[styles.tab, selectedTab === 'services' && styles.activeTab]}
+            style={[
+              styles.tab,
+              selectedTab === 'services' && { backgroundColor: colors.primary }
+            ]}
             onPress={() => setSelectedTab('services')}
           >
-            <Text style={[styles.tabText, selectedTab === 'services' && styles.activeTabText]}>
+            <Text style={[
+              styles.tabText,
+              { color: colors.text.primary },
+              selectedTab === 'services' && { color: colors.text.inverse }
+            ]}>
               Services
             </Text>
           </TouchableOpacity>
           
           <TouchableOpacity
-            style={[styles.tab, selectedTab === 'about' && styles.activeTab]}
+            style={[
+              styles.tab,
+              selectedTab === 'about' && { backgroundColor: colors.primary }
+            ]}
             onPress={() => setSelectedTab('about')}
           >
-            <Text style={[styles.tabText, selectedTab === 'about' && styles.activeTabText]}>
+            <Text style={[
+              styles.tabText,
+              { color: colors.text.primary },
+              selectedTab === 'about' && { color: colors.text.inverse }
+            ]}>
               About
             </Text>
           </TouchableOpacity>
           
           <TouchableOpacity
-            style={[styles.tab, selectedTab === 'reviews' && styles.activeTab]}
+            style={[
+              styles.tab,
+              selectedTab === 'reviews' && { backgroundColor: colors.primary }
+            ]}
             onPress={() => setSelectedTab('reviews')}
           >
-            <Text style={[styles.tabText, selectedTab === 'reviews' && styles.activeTabText]}>
+            <Text style={[
+              styles.tabText,
+              { color: colors.text.primary },
+              selectedTab === 'reviews' && { color: colors.text.inverse }
+            ]}>
               Reviews
             </Text>
           </TouchableOpacity>
@@ -569,12 +684,12 @@ const ProviderDetailScreen: React.FC = () => {
 
       {/* Floating Book Button */}
       {selectedServices.length > 0 && (
-        <View style={styles.floatingBookButton}>
-          <TouchableOpacity style={styles.bookFloatingButton} onPress={handleBookServices}>
-            <Text style={styles.bookFloatingButtonText}>
+        <View style={[styles.floatingBookButton, { backgroundColor: colors.background.secondary }]}>
+          <TouchableOpacity style={[styles.bookFloatingButton, { backgroundColor: colors.primary }]} onPress={handleBookServices}>
+            <Text style={[styles.bookFloatingButtonText, { color: colors.text.inverse }]}>
               Book {selectedServices.length} Service{selectedServices.length > 1 ? 's' : ''}
             </Text>
-            <Text style={styles.bookFloatingButtonPrice}>
+            <Text style={[styles.bookFloatingButtonPrice, { color: colors.text.inverse }]}>
               ${selectedServices.reduce((total, service) => total + service.price, 0).toFixed(2)}
             </Text>
           </TouchableOpacity>
@@ -583,12 +698,18 @@ const ProviderDetailScreen: React.FC = () => {
 
       {/* Booking Modal */}
       {provider && user && (
-        <AdvancedBookingModal
+        <ComprehensiveBookingModal
           visible={isBookingModalVisible}
           onClose={() => setIsBookingModalVisible(false)}
-          onSuccess={() => handleBookingSuccess({} as Appointment)}
-          provider={provider}
+          onSuccess={(booking) => {
+            console.log('Booking created:', booking);
+            setIsBookingModalVisible(false);
+            setSelectedServices([]);
+            // You can add notification or navigation logic here
+          }}
+          provider={provider as any} // Cast to User type since it has the required properties
           selectedServices={selectedServices}
+          clientId={user.id}
         />
       )}
     </SafeAreaView>
@@ -627,6 +748,11 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   backButton: {
     width: 40,
     height: 40,
@@ -642,6 +768,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  darkModeToggle: {
+    // Additional margin if needed
   },
   scrollContainer: {
     flex: 1,
@@ -660,12 +789,15 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
   },
+  providerImageContainer: {
+    alignSelf: 'center',
+    marginBottom: 16,
+    position: 'relative',
+  },
   providerImage: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    marginBottom: 16,
-    alignSelf: 'center',
   },
   providerInfo: {
     alignItems: 'center',
@@ -682,10 +814,15 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   onlineIndicator: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: '#10b981',
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    borderWidth: 2,
+    borderColor: 'white',
   },
   ratingRow: {
     flexDirection: 'row',
@@ -700,9 +837,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6b7280',
   },
+  distanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   distanceText: {
     fontSize: 16,
     color: '#8b5cf6',
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  tagsPreview: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  tagChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  tagChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  moreTagsText: {
+    fontSize: 12,
     fontWeight: '500',
   },
   actionButtons: {
@@ -759,16 +922,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  activeTab: {
-    backgroundColor: '#8b5cf6',
-  },
   tabText: {
     fontSize: 16,
     color: '#6b7280',
     fontWeight: '500',
-  },
-  activeTabText: {
-    color: 'white',
   },
   tabContent: {
     paddingHorizontal: 24,
@@ -779,6 +936,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
+    borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -787,11 +945,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
-  },
-  serviceCardSelected: {
-    borderWidth: 2,
-    borderColor: '#8b5cf6',
-    backgroundColor: '#f8faff',
   },
   serviceHeader: {
     flexDirection: 'row',
@@ -817,15 +970,10 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#d1d5db',
     backgroundColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 12,
-  },
-  checkboxSelected: {
-    backgroundColor: '#8b5cf6',
-    borderColor: '#8b5cf6',
   },
   serviceDescription: {
     fontSize: 14,
@@ -838,10 +986,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  serviceDurationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   serviceDuration: {
     fontSize: 14,
     color: '#8b5cf6',
     fontWeight: '500',
+  },
+  selectedBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  selectedBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   bookButton: {
     backgroundColor: '#8b5cf6',

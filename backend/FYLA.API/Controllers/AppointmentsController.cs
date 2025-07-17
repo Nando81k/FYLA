@@ -20,6 +20,7 @@ namespace FYLA.API.Controllers
     }
 
     [HttpGet("available-slots")]
+    [AllowAnonymous]
     public async Task<ActionResult<List<TimeSlotDto>>> GetAvailableTimeSlots([FromQuery] AvailabilityRequestDto request)
     {
       try
@@ -37,6 +38,54 @@ namespace FYLA.API.Controllers
       {
         Console.WriteLine($"Error getting available time slots: {ex.Message}");
         return StatusCode(500, new { message = "An error occurred while retrieving available time slots" });
+      }
+    }
+
+    [HttpGet("time-slots")]
+    [AllowAnonymous]
+    public async Task<ActionResult<List<TimeSlotDto>>> GetTimeSlots(
+        [FromQuery] int providerId,
+        [FromQuery] string date,
+        [FromQuery] string? serviceIds = null)
+    {
+      try
+      {
+        // Parse comma-separated serviceIds if provided
+        List<int>? serviceIdsList = null;
+        if (!string.IsNullOrEmpty(serviceIds))
+        {
+          try
+          {
+            serviceIdsList = serviceIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                     .Select(int.Parse)
+                                     .ToList();
+          }
+          catch (FormatException)
+          {
+            return BadRequest(new { message = "Invalid serviceIds format. Use comma-separated integers." });
+          }
+        }
+
+        var request = new AvailabilityRequestDto
+        {
+          ProviderId = providerId,
+          Date = date,
+          ServiceIds = serviceIdsList
+        };
+
+        var result = await _appointmentService.GetAvailableTimeSlotsAsync(request);
+
+        if (!result.IsSuccess)
+        {
+          return BadRequest(result);
+        }
+
+        return Ok(result.Data);
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"Error getting time slots: {ex.Message}");
+        return StatusCode(500, new { message = "An error occurred while retrieving time slots" });
       }
     }
 
@@ -116,10 +165,15 @@ namespace FYLA.API.Controllers
       try
       {
         var userId = GetCurrentUserId();
+
+        Console.WriteLine($"Update appointment request - ID: {id}, UserID: {userId}, Status: {request.Status}, Notes: {request.Notes}");
+
         var result = await _appointmentService.UpdateAppointmentAsync(id, userId, request);
 
         if (!result.IsSuccess)
         {
+          Console.WriteLine($"Update appointment failed: {result.ErrorMessage}");
+
           if (result.ErrorMessage?.Contains("not found") == true)
           {
             return NotFound(result);
@@ -127,11 +181,13 @@ namespace FYLA.API.Controllers
           return BadRequest(result);
         }
 
+        Console.WriteLine("Update appointment successful");
         return Ok(result.Data);
       }
       catch (Exception ex)
       {
-        Console.WriteLine($"Error updating appointment {id}: {ex.Message}");
+        Console.WriteLine($"Error updating appointment: {ex.Message}");
+        Console.WriteLine($"Stack trace: {ex.StackTrace}");
         return StatusCode(500, new { message = "An error occurred while updating the appointment" });
       }
     }
@@ -159,6 +215,115 @@ namespace FYLA.API.Controllers
       {
         Console.WriteLine($"Error cancelling appointment {id}: {ex.Message}");
         return StatusCode(500, new { message = "An error occurred while cancelling the appointment" });
+      }
+    }
+
+    // Add specific endpoints for appointment status updates
+    [HttpPatch("{id}/cancel")]
+    public async Task<ActionResult<AppointmentDto>> CancelAppointmentStatus(int id)
+    {
+      try
+      {
+        var userId = GetCurrentUserId();
+        var updateRequest = new UpdateAppointmentRequestDto { Status = Core.Enums.AppointmentStatus.Cancelled };
+        var result = await _appointmentService.UpdateAppointmentAsync(id, userId, updateRequest);
+
+        if (!result.IsSuccess)
+        {
+          if (result.ErrorMessage?.Contains("not found") == true)
+          {
+            return NotFound(result);
+          }
+          return BadRequest(result);
+        }
+
+        return Ok(result.Data);
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"Error cancelling appointment {id}: {ex.Message}");
+        return StatusCode(500, new { message = "An error occurred while cancelling the appointment" });
+      }
+    }
+
+    [HttpPatch("{id}/confirm")]
+    public async Task<ActionResult<AppointmentDto>> ConfirmAppointment(int id)
+    {
+      try
+      {
+        var userId = GetCurrentUserId();
+        var updateRequest = new UpdateAppointmentRequestDto { Status = Core.Enums.AppointmentStatus.Confirmed };
+        var result = await _appointmentService.UpdateAppointmentAsync(id, userId, updateRequest);
+
+        if (!result.IsSuccess)
+        {
+          if (result.ErrorMessage?.Contains("not found") == true)
+          {
+            return NotFound(result);
+          }
+          return BadRequest(result);
+        }
+
+        return Ok(result.Data);
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"Error confirming appointment {id}: {ex.Message}");
+        return StatusCode(500, new { message = "An error occurred while confirming the appointment" });
+      }
+    }
+
+    [HttpPatch("{id}/complete")]
+    public async Task<ActionResult<AppointmentDto>> CompleteAppointment(int id)
+    {
+      try
+      {
+        var userId = GetCurrentUserId();
+        var updateRequest = new UpdateAppointmentRequestDto { Status = Core.Enums.AppointmentStatus.Completed };
+        var result = await _appointmentService.UpdateAppointmentAsync(id, userId, updateRequest);
+
+        if (!result.IsSuccess)
+        {
+          if (result.ErrorMessage?.Contains("not found") == true)
+          {
+            return NotFound(result);
+          }
+          return BadRequest(result);
+        }
+
+        return Ok(result.Data);
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"Error completing appointment {id}: {ex.Message}");
+        return StatusCode(500, new { message = "An error occurred while completing the appointment" });
+      }
+    }
+
+    [HttpPatch("{id}/no-show")]
+    public async Task<ActionResult<AppointmentDto>> MarkAppointmentNoShow(int id)
+    {
+      try
+      {
+        var userId = GetCurrentUserId();
+        var updateRequest = new UpdateAppointmentRequestDto { Status = Core.Enums.AppointmentStatus.NoShow };
+        var result = await _appointmentService.UpdateAppointmentAsync(id, userId, updateRequest);
+
+        if (!result.IsSuccess)
+        {
+          if (result.ErrorMessage?.Contains("not found") == true)
+          {
+            return NotFound(result);
+          }
+          return BadRequest(result);
+        }
+
+        return Ok(result.Data);
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"Error marking appointment {id} as no-show: {ex.Message}");
+        return StatusCode(500, new { message = "An error occurred while updating the appointment" });
       }
     }
 

@@ -56,8 +56,8 @@ class ChatService {
       
       // Transform backend format to frontend format
       const conversations: Conversation[] = (backendConversations || []).map(conv => {
-        // Determine which user is the other participant
-        const otherUser = conv.user1 || conv.user2;
+        const user1 = conv.user1;
+        const user2 = conv.user2;
         
         return {
           id: conv.id,
@@ -77,15 +77,25 @@ class ChatService {
           unreadCount: conv.unreadCount,
           createdAt: conv.createdAt,
           updatedAt: conv.updatedAt,
-          provider: otherUser ? {
-            id: otherUser.id,
-            role: otherUser.role || 'provider',
-            fullName: otherUser.fullName || `${otherUser.firstName} ${otherUser.lastName}`,
-            email: otherUser.email,
-            phoneNumber: otherUser.phoneNumber,
-            profilePictureUrl: otherUser.profilePictureUrl,
-            createdAt: otherUser.createdAt,
-            updatedAt: otherUser.updatedAt,
+          client: user1 ? {
+            id: user1.id,
+            role: user1.role || 'Client',
+            fullName: user1.fullName || `${user1.firstName} ${user1.lastName}`,
+            email: user1.email,
+            phoneNumber: user1.phoneNumber,
+            profilePictureUrl: user1.profilePictureUrl,
+            createdAt: user1.createdAt,
+            updatedAt: user1.updatedAt,
+          } : undefined,
+          provider: user2 ? {
+            id: user2.id,
+            role: user2.role || 'Provider',
+            fullName: user2.fullName || `${user2.firstName} ${user2.lastName}`,
+            email: user2.email,
+            phoneNumber: user2.phoneNumber,
+            profilePictureUrl: user2.profilePictureUrl,
+            createdAt: user2.createdAt,
+            updatedAt: user2.updatedAt,
           } : undefined,
         };
       });
@@ -283,7 +293,8 @@ class ChatService {
       );
 
       // Transform backend format to frontend format
-      const otherUser = backendConversation.user1 || backendConversation.user2;
+      const user1 = backendConversation.user1;
+      const user2 = backendConversation.user2;
       
       return {
         id: backendConversation.id,
@@ -303,15 +314,25 @@ class ChatService {
         unreadCount: backendConversation.unreadCount,
         createdAt: backendConversation.createdAt,
         updatedAt: backendConversation.updatedAt,
-        provider: otherUser ? {
-          id: otherUser.id,
-          role: otherUser.role || 'provider',
-          fullName: otherUser.fullName || `${otherUser.firstName} ${otherUser.lastName}`,
-          email: otherUser.email,
-          phoneNumber: otherUser.phoneNumber,
-          profilePictureUrl: otherUser.profilePictureUrl,
-          createdAt: otherUser.createdAt,
-          updatedAt: otherUser.updatedAt,
+        client: user1 ? {
+          id: user1.id,
+          role: user1.role || 'Client',
+          fullName: user1.fullName || `${user1.firstName} ${user1.lastName}`,
+          email: user1.email,
+          phoneNumber: user1.phoneNumber,
+          profilePictureUrl: user1.profilePictureUrl,
+          createdAt: user1.createdAt,
+          updatedAt: user1.updatedAt,
+        } : undefined,
+        provider: user2 ? {
+          id: user2.id,
+          role: user2.role || 'Provider',
+          fullName: user2.fullName || `${user2.firstName} ${user2.lastName}`,
+          email: user2.email,
+          phoneNumber: user2.phoneNumber,
+          profilePictureUrl: user2.profilePictureUrl,
+          createdAt: user2.createdAt,
+          updatedAt: user2.updatedAt,
         } : undefined,
       };
     } catch (error) {

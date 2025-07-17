@@ -15,12 +15,8 @@ class ProviderService {
 
   // Search providers with backend integration
   async searchProviders(request: ProviderSearchRequest): Promise<ProviderSearchResponse> {
-    console.log('🔍 searchProviders called with flag:', FEATURE_FLAGS.USE_REAL_PROVIDER_API);
-    return await ServiceFactory.executeWithFallback(
-      FEATURE_FLAGS.USE_REAL_PROVIDER_API,
-      () => this.searchProvidersReal(request),
-      () => this.searchProvidersMock(request)
-    );
+    console.log('🔍 searchProviders called - ALWAYS using REAL API');
+    return await this.searchProvidersReal(request);
   }
 
   private async searchProvidersReal(request: ProviderSearchRequest): Promise<ProviderSearchResponse> {
@@ -72,11 +68,7 @@ class ProviderService {
 
   // Get provider by ID with backend integration
   async getProviderById(providerId: number): Promise<ProviderProfile> {
-    return await ServiceFactory.executeWithFallback(
-      FEATURE_FLAGS.USE_REAL_PROVIDER_API,
-      () => this.getProviderByIdReal(providerId),
-      () => this.getProviderByIdMock(providerId)
-    );
+    return await this.getProviderByIdReal(providerId);
   }
 
   private async getProviderByIdReal(providerId: number): Promise<ProviderProfile> {
@@ -97,11 +89,7 @@ class ProviderService {
     longitude: number,
     radius: number = 10
   ): Promise<ProviderProfile[]> {
-    return await ServiceFactory.executeWithFallback(
-      FEATURE_FLAGS.USE_REAL_PROVIDER_API,
-      () => this.getNearbyProvidersReal(latitude, longitude, radius),
-      () => this.getNearbyProvidersMock(latitude, longitude, radius)
-    );
+    return await this.getNearbyProvidersReal(latitude, longitude, radius);
   }
 
   private async getNearbyProvidersReal(
@@ -122,11 +110,7 @@ class ProviderService {
 
   // Get service provider tags with backend integration
   async getServiceProviderTags(): Promise<ServiceProviderTag[]> {
-    return await ServiceFactory.executeWithFallback(
-      FEATURE_FLAGS.USE_REAL_PROVIDER_API,
-      () => this.getServiceProviderTagsReal(),
-      () => this.getServiceProviderTagsMock()
-    );
+    return await this.getServiceProviderTagsReal();
   }
 
   private async getServiceProviderTagsReal(): Promise<ServiceProviderTag[]> {
@@ -211,6 +195,7 @@ class ProviderService {
           id: providerId,
           fullName: '', // Will be filled by provider data
           profilePictureUrl: '',
+          isServiceProvider: true,
         },
       });
     }

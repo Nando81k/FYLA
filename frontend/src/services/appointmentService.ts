@@ -31,11 +31,8 @@ class AppointmentService {
     date: Date,
     serviceIds: number[]
   ): Promise<TimeSlot[]> {
-    return await ServiceFactory.executeWithFallback(
-      FEATURE_FLAGS.USE_REAL_APPOINTMENT_API,
-      () => this.getAvailableTimeSlotsReal(providerId, date, serviceIds),
-      () => this.getMockAvailableTimeSlots(providerId, date.toISOString().split('T')[0])
-    );
+    console.log('📅 getAvailableTimeSlots called - ALWAYS using REAL API');
+    return await this.getAvailableTimeSlotsReal(providerId, date, serviceIds);
   }
 
   private async getAvailableTimeSlotsReal(
@@ -60,11 +57,8 @@ class AppointmentService {
 
   // Create appointment with backend integration
   async createAppointment(appointmentData: CreateAppointmentRequest): Promise<Appointment> {
-    return await ServiceFactory.executeWithFallback(
-      FEATURE_FLAGS.USE_REAL_APPOINTMENT_API,
-      () => this.createAppointmentReal(appointmentData),
-      () => this.createMockAppointment(appointmentData)
-    );
+    console.log('📅 createAppointment called - ALWAYS using REAL API');
+    return await this.createAppointmentReal(appointmentData);
   }
 
   private async createAppointmentReal(appointmentData: CreateAppointmentRequest): Promise<Appointment> {
@@ -86,11 +80,8 @@ class AppointmentService {
     limit: number = 20,
     status?: string
   ): Promise<AppointmentListResponse> {
-    return await ServiceFactory.executeWithFallback(
-      FEATURE_FLAGS.USE_REAL_APPOINTMENT_API,
-      () => this.getAppointmentsReal(page, limit, status),
-      () => this.getMockAppointments(page, limit, status)
-    );
+    console.log('📅 getAppointments called - ALWAYS using REAL API');
+    return await this.getAppointmentsReal(page, limit, status);
   }
 
   private async getAppointmentsReal(
@@ -106,6 +97,13 @@ class AppointmentService {
           params: { page, limit, status }
         }
       );
+      // Map Notes to notes for each appointment
+      if (response.appointments) {
+        response.appointments = response.appointments.map(appt => ({
+          ...appt,
+          notes: appt.notes || appt.Notes || '',
+        }));
+      }
       return response;
     } catch (error) {
       throw this.handleError(error);
@@ -178,6 +176,85 @@ class AppointmentService {
     } catch (error) {
       throw this.handleError(error);
     }
+  }
+
+  // Add appointment status update methods
+  async updateAppointmentStatus(appointmentId: number, status: AppointmentStatus): Promise<Appointment> {
+    return await ServiceFactory.executeWithFallback(
+      FEATURE_FLAGS.USE_REAL_APPOINTMENT_API,
+      () => this.updateAppointmentStatusReal(appointmentId, status),
+      () => this.updateAppointmentStatusMock(appointmentId, status)
+    );
+  }
+
+  private async updateAppointmentStatusReal(appointmentId: number, status: AppointmentStatus): Promise<Appointment> {
+    try {
+      const apiService = ServiceFactory.getApiService();
+      let endpoint: string;
+      
+      // Use specific endpoints for different status updates
+      switch (status) {
+        case AppointmentStatus.CONFIRMED:
+          endpoint = API_ENDPOINTS.APPOINTMENTS.CONFIRM(appointmentId);
+          break;
+        case AppointmentStatus.CANCELLED:
+          endpoint = API_ENDPOINTS.APPOINTMENTS.CANCEL(appointmentId);
+          break;
+        case AppointmentStatus.COMPLETED:
+          endpoint = API_ENDPOINTS.APPOINTMENTS.COMPLETE(appointmentId);
+          break;
+        case AppointmentStatus.NO_SHOW:
+          endpoint = API_ENDPOINTS.APPOINTMENTS.NO_SHOW(appointmentId);
+          break;
+        default:
+          // For other statuses, use the general update endpoint
+          endpoint = API_ENDPOINTS.APPOINTMENTS.UPDATE(appointmentId);
+          return await apiService.put<Appointment>(endpoint, { status });
+      }
+
+      return await apiService.patch<Appointment>(endpoint);
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  private async updateAppointmentStatusMock(appointmentId: number, status: AppointmentStatus): Promise<Appointment> {
+    // Simulate API delay
+    await ServiceFactory.getApiService().simulateMockDelay();
+    
+    console.log('Mock appointment status updated:', { appointmentId, status });
+    
+    // Return mock updated appointment
+    return {
+      id: appointmentId,
+      clientId: 1,
+      providerId: 1,
+      scheduledStartTime: new Date().toISOString(),
+      scheduledEndTime: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      status,
+      notes: 'Mock appointment',
+      totalPrice: 100,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      services: [],
+    };
+  }
+
+  // Convenience methods for common appointment status updates
+  async confirmAppointment(appointmentId: number): Promise<Appointment> {
+    return this.updateAppointmentStatus(appointmentId, AppointmentStatus.CONFIRMED);
+  }
+
+  async completeAppointment(appointmentId: number): Promise<Appointment> {
+    return this.updateAppointmentStatus(appointmentId, AppointmentStatus.COMPLETED);
+  }
+
+  async markAppointmentNoShow(appointmentId: number): Promise<Appointment> {
+    return this.updateAppointmentStatus(appointmentId, AppointmentStatus.NO_SHOW);
+  }
+
+  async cancelAppointmentStatus(appointmentId: number): Promise<Appointment> {
+    return this.updateAppointmentStatus(appointmentId, AppointmentStatus.CANCELLED);
   }
 
   // Mock functions for development

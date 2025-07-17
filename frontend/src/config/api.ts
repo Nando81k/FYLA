@@ -7,10 +7,11 @@ const isDevelopment = __DEV__;
 
 // Multiple fallback URLs for different environments
 const FALLBACK_URLS = [
-  'http://192.168.1.185:5002/api', // Your Mac's IP - for physical devices and iOS simulator
+  'http://10.0.12.121:5002/api',   // Current working IP - prioritized
+  'http://192.168.1.185:5002/api', // Previous IP - kept as fallback
+  'http://192.168.1.201:5002/api', // Older IP - kept as fallback
   'http://localhost:5002/api',     // Localhost - may work for some simulators
   'http://127.0.0.1:5002/api',     // Loopback - alternative for simulator
-  'http://10.0.12.121:5002/api',   // Old IP - kept as fallback
   // Add more IPs if needed
 ];
 
@@ -35,15 +36,17 @@ export const FEATURE_FLAGS = {
   USE_REAL_APPOINTMENT_API: true,
   USE_REAL_BOOKING_API: true, // Advanced booking system - now using real API
   USE_REAL_CHAT_API: true,
+  USE_REAL_SOCIAL_API: true, // Social features - now using real API
   USE_REAL_REVIEW_API: true,
   USE_REAL_CALENDAR_API: true,
   USE_REAL_NOTIFICATION_API: true,
   USE_REAL_ANALYTICS_API: true,
   USE_REAL_CONTENT_API: true, // Using real API for content
+  USE_REAL_SEARCH_API: true, // Using real API for search
   
   // WebSocket configuration
   USE_REAL_WEBSOCKET: true,
-  WEBSOCKET_URL: process.env.EXPO_PUBLIC_WEBSOCKET_URL || 'ws://192.168.1.185:5002/chathub',
+  WEBSOCKET_URL: process.env.EXPO_PUBLIC_WEBSOCKET_URL || 'ws://10.0.12.121:5002/chathub',
   
   // Push notification configuration
   USE_REAL_PUSH_NOTIFICATIONS: true,
@@ -96,6 +99,8 @@ export const API_ENDPOINTS = {
     UPDATE: (id: number) => `/appointments/${id}`,
     CANCEL: (id: number) => `/appointments/${id}/cancel`,
     CONFIRM: (id: number) => `/appointments/${id}/confirm`,
+    COMPLETE: (id: number) => `/appointments/${id}/complete`,
+    NO_SHOW: (id: number) => `/appointments/${id}/no-show`,
     TIME_SLOTS: '/appointments/time-slots',
   },
   
@@ -106,6 +111,38 @@ export const API_ENDPOINTS = {
     CONVERSATION_MESSAGES: (conversationId: number) => `/chat/conversations/${conversationId}/messages`,
     MARK_MESSAGE_READ: (messageId: number) => `/chat/messages/${messageId}/read`,
     MARK_CONVERSATION_READ: (conversationId: number) => `/chat/conversations/${conversationId}/read`,
+  },
+  
+  // Social Features
+  SOCIAL: {
+    FOLLOW: '/social/follow',
+    FOLLOWERS: (userId: number) => `/social/users/${userId}/followers`,
+    FOLLOWING: (userId: number) => `/social/users/${userId}/following`,
+    STATS: (userId: number) => `/social/users/${userId}/stats`,
+    IS_FOLLOWING: (userId: number) => `/social/users/${userId}/is-following`,
+    MUTUAL_FOLLOWS: (userId: number) => `/social/users/${userId}/mutual-follows`,
+    SUGGESTED_USERS: '/social/suggested-users',
+    MY_FOLLOWING: '/social/my-following',
+    MY_FOLLOWERS: '/social/my-followers',
+  },
+
+  // Content & Feed
+  CONTENT: {
+    FEED: '/content/feed',
+    POSTS: '/content/posts',
+    STORIES: '/content/stories',
+    USER_POSTS: (userId: number) => `/content/users/${userId}/posts`,
+    SAVED_POSTS: '/content/saved',
+  },
+
+  // Bookings (Advanced)
+  BOOKINGS: {
+    LIST: '/bookings',
+    CREATE: '/bookings/create',
+    GET: (id: string) => `/bookings/${id}`,
+    UPDATE: (id: string) => `/bookings/${id}`,
+    CANCEL: (id: string) => `/bookings/${id}/cancel`,
+    VALIDATE: '/bookings/validate',
   },
   
   // Reviews

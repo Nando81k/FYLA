@@ -28,13 +28,12 @@ import {
   CalendarEvent,
 } from '@/types/booking';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5002/api';
-
 class AdvancedBookingService {
-  private baseURL: string;
+  // Use relative base path instead of full URL
+  private baseURL = '/bookings';
 
   constructor() {
-    this.baseURL = `${API_BASE_URL}/bookings`;
+    // Remove the constructor since we're using a relative path
   }
 
   // ========================================
@@ -55,11 +54,51 @@ class AdvancedBookingService {
   private async createBookingReal(bookingRequest: BookingRequest): Promise<BookingActionResponse> {
     try {
       const apiService = ServiceFactory.getApiService();
-      return await apiService.post<BookingActionResponse>(
-        `${this.baseURL}/create`,
-        bookingRequest
+      
+      // Transform BookingRequest to CreateAppointmentRequestDto format
+      const createAppointmentRequest = {
+        ProviderId: bookingRequest.providerId,
+        ServiceIds: bookingRequest.serviceIds.map(id => parseInt(id, 10)),
+        ScheduledStartTime: bookingRequest.requestedDateTime,
+        Notes: bookingRequest.notes || null
+      };
+
+      console.log('Creating appointment with request:', createAppointmentRequest);
+
+      const appointmentResponse = await apiService.post<any>(
+        '/appointments',
+        createAppointmentRequest
       );
+
+      console.log('Appointment created successfully:', appointmentResponse);
+
+      // Transform the response back to BookingActionResponse format
+      return {
+        success: true,
+        booking: {
+          id: appointmentResponse.id.toString(),
+          clientId: bookingRequest.clientId,
+          providerId: bookingRequest.providerId,
+          serviceIds: bookingRequest.serviceIds,
+          requestedDateTime: bookingRequest.requestedDateTime,
+          duration: bookingRequest.duration,
+          type: bookingRequest.type,
+          status: BookingStatus.PENDING,
+          notes: bookingRequest.notes,
+          specialRequests: bookingRequest.specialRequests,
+          addOnIds: bookingRequest.addOnIds,
+          recurrenceConfig: bookingRequest.recurrenceConfig,
+          packageConfig: bookingRequest.packageConfig,
+          paymentMethod: bookingRequest.paymentMethod,
+          estimatedTotal: bookingRequest.estimatedTotal,
+          actualTotal: bookingRequest.estimatedTotal,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        message: 'Appointment created successfully'
+      };
     } catch (error) {
+      console.error('Error creating appointment:', error);
       throw this.handleError(error);
     }
   }
@@ -78,7 +117,7 @@ class AdvancedBookingService {
   private async getBookingsReal(filter: BookingFilter): Promise<BookingResponse> {
     try {
       const apiService = ServiceFactory.getApiService();
-      return await apiService.get<BookingResponse>(`${this.baseURL}`, {
+      return await apiService.get<BookingResponse>('/bookings', {
         params: filter
       });
     } catch (error) {

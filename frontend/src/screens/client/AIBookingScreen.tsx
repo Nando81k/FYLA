@@ -19,8 +19,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/theme/ThemeProvider';
 import { aiBookingService, ServiceRecommendation, TimeSlotRecommendation, PersonalizedBookingFlow } from '@/services/aiBookingService';
 import { ClientSearchStackParamList } from '@/types';
+import DarkModeToggle from '@/components/shared/DarkModeToggle';
 
 const { width } = Dimensions.get('window');
 
@@ -37,6 +39,7 @@ interface BookingPreferences {
 const AIBookingScreen: React.FC = () => {
   const navigation = useNavigation<AIBookingScreenNavigationProp>();
   const { token, user } = useAuth();
+  const { colors, typography, spacing } = useTheme();
   
   const [step, setStep] = useState<'preferences' | 'recommendations' | 'booking'>('preferences');
   const [preferences, setPreferences] = useState<BookingPreferences>({

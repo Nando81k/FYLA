@@ -140,9 +140,8 @@ export type RootStackParamList = {
 };
 
 export type AuthStackParamList = {
-  RoleSelection: undefined;
   Login: undefined;
-  Register: undefined;
+  Register: { userType: UserRole };
 };
 
 export type ClientTabParamList = {
@@ -162,6 +161,7 @@ export type ClientFeedStackParamList = {
   Notifications: undefined;
   NotificationPreferences: undefined;
   CreatePost: undefined;
+  CreateContent: undefined;
   ProviderDetail: { providerId: number };
   AIBooking: undefined;
 };
@@ -191,22 +191,29 @@ export type ProfileStackParamList = {
 
 export type ProviderTabParamList = {
   Dashboard: undefined;
+  Feed: undefined;
   Services: undefined;
-  Calendar: undefined;
   Bookings: undefined;
   Messages: undefined;
   Profile: undefined;
 };
 
+export type ProviderFeedStackParamList = {
+  FeedHome: undefined;
+  CreateContent: undefined;
+  UserProfile: { userId: number };
+  Comments: { postId: string };
+  PostDetail: { postId: string };
+};
+
 export type ProviderDashboardStackParamList = {
   DashboardHome: undefined;
-  BusinessHours: undefined;
   Analytics: undefined;
   AvailabilityManagement: undefined;
   BookingManagement: undefined;
   PackageManagement: undefined;
-  Calendar: undefined;
   ClientManagement: undefined;
+  CreateContent: undefined;
 };
 
 // Business Hours

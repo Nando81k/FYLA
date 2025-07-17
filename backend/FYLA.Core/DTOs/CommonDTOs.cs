@@ -14,19 +14,6 @@ namespace FYLA.Core.DTOs
     public DateTime CreatedAt { get; set; }
   }
 
-  public class ReviewDto
-  {
-    public int Id { get; set; }
-    public int AppointmentId { get; set; }
-    public int ClientId { get; set; }
-    public int ProviderId { get; set; }
-    public int Rating { get; set; }
-    public string Comment { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; }
-    public UserDto Client { get; set; } = null!;
-    public UserDto Provider { get; set; } = null!;
-  }
-
   public class CreateServiceRequestDto
   {
     [Required]

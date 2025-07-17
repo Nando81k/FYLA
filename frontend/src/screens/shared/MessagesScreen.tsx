@@ -14,20 +14,24 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/theme/ThemeProvider';
 import { useChatContext } from '@/context/ChatContext';
 import { chatService } from '@/services/chatService';
-import { Conversation } from '@/types';
+import { Conversation, User, UserRole } from '@/types';
+import DarkModeToggle from '@/components/shared/DarkModeToggle';
 
 type MessagesNavigationProp = StackNavigationProp<any, 'Messages'>;
 
 const MessagesScreen: React.FC = () => {
   const navigation = useNavigation<MessagesNavigationProp>();
   const { token, user } = useAuth();
+  const { colors, typography, spacing } = useTheme();
   const { 
     conversations, 
     isConnected, 
     unreadCounts, 
     onlineUsers,
+    loadConversations: loadConversationsFromContext,
     setConversations 
   } = useChatContext();
   
@@ -45,9 +49,8 @@ const MessagesScreen: React.FC = () => {
     
     if (showLoader) setIsLoading(true);
     try {
-      // Using mock data for now
-      const response = await chatService.getMockConversations();
-      setConversations(response.conversations);
+      // Use real data from ChatContext
+      await loadConversationsFromContext();
     } catch (error) {
       console.error('Failed to load conversations:', error);
     } finally {
@@ -62,7 +65,33 @@ const MessagesScreen: React.FC = () => {
   };
 
   const handleConversationPress = (conversation: Conversation) => {
-    const otherUser = conversation.provider?.id === user?.id ? conversation.client : conversation.provider;
+    // Determine who is the other user in this conversation
+    let otherUser: User | undefined;
+    
+    if (user?.id === conversation.clientId) {
+      // Current user is the client, so other user is the provider
+      otherUser = conversation.provider;
+    } else if (user?.id === conversation.providerId) {
+      // Current user is the provider, so other user is the client  
+      otherUser = conversation.client;
+    }
+
+    // If we don't have the full user object, create a minimal one
+    if (!otherUser) {
+      const otherUserId = user?.id === conversation.clientId ? conversation.providerId : conversation.clientId;
+      const otherUserRole = user?.id === conversation.clientId ? UserRole.PROVIDER : UserRole.CLIENT;
+      
+      otherUser = {
+        id: otherUserId,
+        role: otherUserRole,
+        fullName: otherUserRole === UserRole.PROVIDER ? 'Provider' : 'Client',
+        email: '',
+        phoneNumber: '',
+        createdAt: '',
+        updatedAt: '',
+      };
+    }
+
     navigation.navigate('Chat', {
       conversationId: conversation.id,
       otherUser: otherUser,
@@ -97,7 +126,33 @@ const MessagesScreen: React.FC = () => {
   };
 
   const renderConversationItem = ({ item: conversation }: { item: Conversation }) => {
-    const otherUser = conversation.provider?.id === user?.id ? conversation.client : conversation.provider;
+    // Determine who is the other user in this conversation
+    let otherUser: User | undefined;
+    
+    if (user?.id === conversation.clientId) {
+      // Current user is the client, so other user is the provider
+      otherUser = conversation.provider;
+    } else if (user?.id === conversation.providerId) {
+      // Current user is the provider, so other user is the client  
+      otherUser = conversation.client;
+    }
+
+    // If we don't have the full user object, create a minimal one
+    if (!otherUser) {
+      const otherUserId = user?.id === conversation.clientId ? conversation.providerId : conversation.clientId;
+      const otherUserRole = user?.id === conversation.clientId ? UserRole.PROVIDER : UserRole.CLIENT;
+      
+      otherUser = {
+        id: otherUserId,
+        role: otherUserRole,
+        fullName: otherUserRole === UserRole.PROVIDER ? 'Provider' : 'Client',
+        email: '',
+        phoneNumber: '',
+        createdAt: '',
+        updatedAt: '',
+      };
+    }
+
     const hasUnread = conversation.unreadCount > 0;
 
     return (
@@ -154,22 +209,24 @@ const MessagesScreen: React.FC = () => {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Messages</Text>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+        <View style={[styles.header, { backgroundColor: colors.background.primary, borderBottomColor: colors.border.primary }]}>
+          <Text style={[styles.title, { color: colors.text.primary }]}>Messages</Text>
+          <DarkModeToggle size={24} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8b5cf6" />
-          <Text style={styles.loadingText}>Loading conversations...</Text>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.text.secondary }]}>Loading conversations...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Messages</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <View style={[styles.header, { backgroundColor: colors.background.primary, borderBottomColor: colors.border.primary }]}>
+        <Text style={[styles.title, { color: colors.text.primary }]}>Messages</Text>
+        <DarkModeToggle size={24} />
       </View>
 
       <FlatList
@@ -185,7 +242,8 @@ const MessagesScreen: React.FC = () => {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            tintColor="#8b5cf6"
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -210,17 +268,17 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   header: {
-    backgroundColor: 'white',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 24,
     paddingTop: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1a1a1a',
   },
   listContainer: {
     flexGrow: 1,

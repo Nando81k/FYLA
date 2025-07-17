@@ -22,6 +22,7 @@ public class ProvidersController : ControllerBase
   }
 
   [HttpGet("search")]
+  [AllowAnonymous]
   public async Task<ActionResult<ProviderSearchResponse>> SearchProviders(
       [FromQuery] string? query,
       [FromQuery] int[]? tags,
@@ -107,6 +108,7 @@ public class ProvidersController : ControllerBase
   }
 
   [HttpGet("{id:int}")]
+  [AllowAnonymous]
   public async Task<ActionResult<ProviderProfile>> GetProviderById(int id)
   {
     try
@@ -149,6 +151,7 @@ public class ProvidersController : ControllerBase
   }
 
   [HttpGet("nearby")]
+  [AllowAnonymous]
   public async Task<ActionResult<List<ProviderProfile>>> GetNearbyProviders(
       [FromQuery] double latitude,
       [FromQuery] double longitude,

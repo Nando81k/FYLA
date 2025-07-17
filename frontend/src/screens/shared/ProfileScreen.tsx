@@ -17,15 +17,18 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { ProfileStackParamList } from '@/types';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/theme/ThemeProvider';
 import { userService, UpdateProfileRequest } from '@/services/userService';
 import { locationService } from '@/services/locationService';
 import { UserRole } from '@/types';
 import { getEnvironmentInfo } from '@/config/api';
+import DarkModeToggle from '@/components/shared/DarkModeToggle';
 
 type ProfileScreenNavigationProp = StackNavigationProp<ProfileStackParamList, 'ProfileHome'>;
 
 const ProfileScreen: React.FC = () => {
   const { user, token, logout } = useAuth();
+  const { colors, typography, spacing } = useTheme();
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -152,12 +155,12 @@ const ProfileScreen: React.FC = () => {
       {profileData.profilePictureUrl ? (
         <Image source={{ uri: profileData.profilePictureUrl }} style={styles.profileImage} />
       ) : (
-        <View style={styles.placeholderImage}>
-          <Ionicons name="person" size={40} color="#666" />
+        <View style={[styles.placeholderImage, { backgroundColor: colors.background.tertiary }]}>
+          <Ionicons name="person" size={40} color={colors.text.secondary} />
         </View>
       )}
-      <View style={styles.imageOverlay}>
-        <Ionicons name="camera" size={20} color="white" />
+      <View style={[styles.imageOverlay, { backgroundColor: colors.primary }]}>
+        <Ionicons name="camera" size={20} color={colors.text.inverse} />
       </View>
     </TouchableOpacity>
   );
@@ -170,59 +173,71 @@ const ProfileScreen: React.FC = () => {
     placeholder = ''
   ) => (
     <View style={styles.fieldContainer}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <Text style={[styles.fieldLabel, { color: colors.text.primary }]}>{label}</Text>
       {isEditing ? (
         <TextInput
-          style={[styles.input, multiline && styles.textArea]}
+          style={[
+            styles.input, 
+            multiline && styles.textArea,
+            { 
+              backgroundColor: colors.background.tertiary,
+              borderColor: colors.border.primary,
+              color: colors.text.primary
+            }
+          ]}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
+          placeholderTextColor={colors.text.secondary}
           multiline={multiline}
           numberOfLines={multiline ? 3 : 1}
         />
       ) : (
-        <Text style={styles.fieldValue}>{value || 'Not provided'}</Text>
+        <Text style={[styles.fieldValue, { color: colors.text.primary }]}>{value || 'Not provided'}</Text>
       )}
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>My Profile</Text>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => {
-              if (isEditing) {
-                handleSave();
-              } else {
-                setIsEditing(true);
-              }
-            }}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#3b82f6" />
-            ) : (
-              <Text style={styles.editButtonText}>
-                {isEditing ? 'Save' : 'Edit'}
-              </Text>
-            )}
-          </TouchableOpacity>
+        <View style={[styles.header, { backgroundColor: colors.background.primary, borderBottomColor: colors.border.primary }]}>
+          <Text style={[styles.title, { color: colors.text.primary }]}>My Profile</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={[styles.editButton, { backgroundColor: colors.primary }]}
+              onPress={() => {
+                if (isEditing) {
+                  handleSave();
+                } else {
+                  setIsEditing(true);
+                }
+              }}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color={colors.text.inverse} />
+              ) : (
+                <Text style={[styles.editButtonText, { color: colors.text.inverse }]}>
+                  {isEditing ? 'Save' : 'Edit'}
+                </Text>
+              )}
+            </TouchableOpacity>
+            <DarkModeToggle size={24} style={styles.darkModeToggle} />
+          </View>
         </View>
 
         <View style={styles.content}>
           {/* Profile Image */}
           <View style={styles.imageSection}>
             {renderProfileImage()}
-            <Text style={styles.roleTag}>
+            <Text style={[styles.roleTag, { color: colors.text.secondary, backgroundColor: colors.background.secondary }]}>
               {isProvider ? 'Service Provider' : 'Client'}
             </Text>
           </View>
 
           {/* Profile Fields */}
-          <View style={styles.fieldsContainer}>
+          <View style={[styles.fieldsContainer, { backgroundColor: colors.background.secondary }]}>
             {renderEditableField(
               'Full Name',
               profileData.fullName || '',
@@ -259,25 +274,25 @@ const ProfileScreen: React.FC = () => {
             {/* Location Section */}
             {isProvider && (
               <View style={styles.fieldContainer}>
-                <Text style={styles.fieldLabel}>Business Location</Text>
+                <Text style={[styles.fieldLabel, { color: colors.text.primary }]}>Business Location</Text>
                 {isEditing ? (
                   <View style={styles.locationSection}>
-                    <Text style={styles.locationText}>
+                    <Text style={[styles.locationText, { color: colors.text.primary }]}>
                       {locationAddress || 'No location set'}
                     </Text>
                     <TouchableOpacity
-                      style={styles.locationButton}
+                      style={[styles.locationButton, { backgroundColor: colors.background.tertiary }]}
                       onPress={handleGetCurrentLocation}
                       disabled={isLoading}
                     >
-                      <Ionicons name="location" size={16} color="#8b5cf6" />
-                      <Text style={styles.locationButtonText}>
+                      <Ionicons name="location" size={16} color={colors.primary} />
+                      <Text style={[styles.locationButtonText, { color: colors.primary }]}>
                         {profileData.locationLat ? 'Update Location' : 'Get Current Location'}
                       </Text>
                     </TouchableOpacity>
                   </View>
                 ) : (
-                  <Text style={styles.fieldValue}>
+                  <Text style={[styles.fieldValue, { color: colors.text.primary }]}>
                     {locationAddress || 'Location not set'}
                   </Text>
                 )}
@@ -288,42 +303,42 @@ const ProfileScreen: React.FC = () => {
           {/* Provider-specific sections */}
           {isProvider && (
             <View style={styles.providerSection}>
-              <TouchableOpacity style={styles.sectionButton}>
+              <TouchableOpacity style={[styles.sectionButton, { backgroundColor: colors.background.secondary }]}>
                 <View style={styles.sectionButtonContent}>
-                  <Ionicons name="pricetags" size={24} color="#8b5cf6" />
+                  <Ionicons name="pricetags" size={24} color={colors.primary} />
                   <View style={styles.sectionButtonText}>
-                    <Text style={styles.sectionButtonTitle}>Service Tags</Text>
-                    <Text style={styles.sectionButtonSubtitle}>
+                    <Text style={[styles.sectionButtonTitle, { color: colors.text.primary }]}>Service Tags</Text>
+                    <Text style={[styles.sectionButtonSubtitle, { color: colors.text.secondary }]}>
                       Set your specialties (Barber, Nail Tech, etc.)
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color="#666" />
+                  <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.sectionButton}>
+              <TouchableOpacity style={[styles.sectionButton, { backgroundColor: colors.background.secondary }]}>
                 <View style={styles.sectionButtonContent}>
-                  <Ionicons name="time" size={24} color="#8b5cf6" />
+                  <Ionicons name="time" size={24} color={colors.primary} />
                   <View style={styles.sectionButtonText}>
-                    <Text style={styles.sectionButtonTitle}>Business Hours</Text>
-                    <Text style={styles.sectionButtonSubtitle}>
+                    <Text style={[styles.sectionButtonTitle, { color: colors.text.primary }]}>Business Hours</Text>
+                    <Text style={[styles.sectionButtonSubtitle, { color: colors.text.secondary }]}>
                       Set your availability schedule
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color="#666" />
+                  <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.sectionButton}>
+              <TouchableOpacity style={[styles.sectionButton, { backgroundColor: colors.background.secondary }]}>
                 <View style={styles.sectionButtonContent}>
-                  <Ionicons name="location" size={24} color="#8b5cf6" />
+                  <Ionicons name="location" size={24} color={colors.primary} />
                   <View style={styles.sectionButtonText}>
-                    <Text style={styles.sectionButtonTitle}>Location</Text>
-                    <Text style={styles.sectionButtonSubtitle}>
+                    <Text style={[styles.sectionButtonTitle, { color: colors.text.primary }]}>Location</Text>
+                    <Text style={[styles.sectionButtonSubtitle, { color: colors.text.secondary }]}>
                       Set your service area
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color="#666" />
+                  <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
                 </View>
               </TouchableOpacity>
             </View>
@@ -331,40 +346,40 @@ const ProfileScreen: React.FC = () => {
 
           {/* Settings Section */}
           <View style={styles.settingsSection}>
-            <Text style={styles.sectionTitle}>Settings</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>Settings</Text>
             
             <TouchableOpacity 
-              style={styles.settingButton}
+              style={[styles.settingButton, { backgroundColor: colors.background.secondary }]}
               onPress={() => navigation.navigate('NotificationSettings')}
             >
-              <Ionicons name="notifications" size={24} color="#666" />
-              <Text style={styles.settingButtonText}>Notifications</Text>
-              <Ionicons name="chevron-forward" size={20} color="#666" />
+              <Ionicons name="notifications" size={24} color={colors.text.secondary} />
+              <Text style={[styles.settingButtonText, { color: colors.text.primary }]}>Notifications</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.settingButton}>
-              <Ionicons name="shield-checkmark" size={24} color="#666" />
-              <Text style={styles.settingButtonText}>Privacy & Security</Text>
-              <Ionicons name="chevron-forward" size={20} color="#666" />
+            <TouchableOpacity style={[styles.settingButton, { backgroundColor: colors.background.secondary }]}>
+              <Ionicons name="shield-checkmark" size={24} color={colors.text.secondary} />
+              <Text style={[styles.settingButtonText, { color: colors.text.primary }]}>Privacy & Security</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.settingButton}>
-              <Ionicons name="help-circle" size={24} color="#666" />
-              <Text style={styles.settingButtonText}>Help & Support</Text>
-              <Ionicons name="chevron-forward" size={20} color="#666" />
+            <TouchableOpacity style={[styles.settingButton, { backgroundColor: colors.background.secondary }]}>
+              <Ionicons name="help-circle" size={24} color={colors.text.secondary} />
+              <Text style={[styles.settingButtonText, { color: colors.text.primary }]}>Help & Support</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
             </TouchableOpacity>
 
             {/* Developer Settings - only show in development */}
             {getEnvironmentInfo().isDevelopment && (
               <TouchableOpacity 
-                style={styles.settingButton}
+                style={[styles.settingButton, { backgroundColor: colors.background.secondary }]}
                 onPress={() => navigation.navigate('DeveloperSettings')}
               >
-                <Ionicons name="code-slash" size={24} color="#8B5CF6" />
-                <Text style={[styles.settingButtonText, { color: '#8B5CF6' }]}>
+                <Ionicons name="code-slash" size={24} color={colors.primary} />
+                <Text style={[styles.settingButtonText, { color: colors.primary }]}>
                   Developer Settings
                 </Text>
-                <Ionicons name="chevron-forward" size={20} color="#8B5CF6" />
+                <Ionicons name="chevron-forward" size={20} color={colors.primary} />
               </TouchableOpacity>
             )}
           </View>
@@ -401,6 +416,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1a1a1a',
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   editButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -410,6 +430,9 @@ const styles = StyleSheet.create({
   editButtonText: {
     color: 'white',
     fontWeight: '600',
+  },
+  darkModeToggle: {
+    // Additional margin if needed
   },
   content: {
     paddingHorizontal: 24,

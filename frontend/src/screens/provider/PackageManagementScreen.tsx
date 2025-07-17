@@ -18,6 +18,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '@/context/AuthContext';
 import { useBooking } from '@/context/BookingContext';
 import { useNotifications } from '@/context/NotificationContext';
+import { useTheme } from '@/theme/ThemeProvider';
 import {
   BookingPackage,
   ServiceDetails,
@@ -34,7 +35,11 @@ const PackageManagementScreen: React.FC = () => {
     fetchPackages,
     clearError,
   } = useBooking();
-  const { showNotification } = useNotifications();
+  const { sendLocalNotification } = useNotifications();
+  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+
+  // Create styles with theme
+  const styles = createStyles(colors, typography, spacing, borderRadius, shadows);
 
   // State
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -213,11 +218,10 @@ const PackageManagementScreen: React.FC = () => {
       // TODO: Implement createPackage in booking service
       // await createPackage(newPackage);
       
-      showNotification({
-        type: 'success',
-        title: 'Package Created',
-        message: 'Booking package has been created successfully',
-      });
+      await sendLocalNotification(
+        'Package Created',
+        'Booking package has been created successfully'
+      );
       
       setShowCreateModal(false);
       resetForm();
@@ -251,11 +255,10 @@ const PackageManagementScreen: React.FC = () => {
       // TODO: Implement updatePackage in booking service
       // await updatePackage(selectedPackage.id, updatedPackage);
       
-      showNotification({
-        type: 'success',
-        title: 'Package Updated',
-        message: 'Booking package has been updated successfully',
-      });
+      await sendLocalNotification(
+        'Package Updated',
+        'Booking package has been updated successfully'
+      );
       
       setShowEditModal(false);
       setSelectedPackage(null);
@@ -284,11 +287,10 @@ const PackageManagementScreen: React.FC = () => {
               // TODO: Implement deletePackage in booking service
               // await deletePackage(pkg.id);
               
-              showNotification({
-                type: 'success',
-                title: 'Package Deleted',
-                message: 'Booking package has been deleted successfully',
-              });
+              await sendLocalNotification(
+                'Package Deleted',
+                'Booking package has been deleted successfully'
+              );
               
               // Refresh packages
               if (user?.id) {
@@ -308,11 +310,10 @@ const PackageManagementScreen: React.FC = () => {
       // TODO: Implement togglePackageStatus in booking service
       // await togglePackageStatus(pkg.id, !pkg.isActive);
       
-      showNotification({
-        type: 'success',
-        title: 'Package Updated',
-        message: `Package ${!pkg.isActive ? 'activated' : 'deactivated'}`,
-      });
+      await sendLocalNotification(
+        'Package Updated',
+        `Package ${!pkg.isActive ? 'activated' : 'deactivated'}`
+      );
       
       // Refresh packages
       if (user?.id) {
@@ -353,7 +354,7 @@ const PackageManagementScreen: React.FC = () => {
           <Ionicons
             name={selectedServiceIds.includes(service.id) ? 'checkbox' : 'square-outline'}
             size={24}
-            color={selectedServiceIds.includes(service.id) ? '#007AFF' : '#C7C7CC'}
+            color={selectedServiceIds.includes(service.id) ? 'colors.primary' : 'colors.text.tertiary'}
           />
         </TouchableOpacity>
       ))}
@@ -376,8 +377,8 @@ const PackageManagementScreen: React.FC = () => {
             <Switch
               value={pkg.isActive}
               onValueChange={() => handleTogglePackageStatus(pkg)}
-              trackColor={{ false: '#E5E5E5', true: '#007AFF' }}
-              thumbColor="#FFF"
+              trackColor={{ false: 'colors.border.light', true: 'colors.primary' }}
+              thumbColor="colors.text.inverse"
             />
             <TouchableOpacity
               style={styles.actionButton}
@@ -387,13 +388,13 @@ const PackageManagementScreen: React.FC = () => {
                 setShowEditModal(true);
               }}
             >
-              <Ionicons name="pencil" size={20} color="#007AFF" />
+              <Ionicons name="pencil" size={20} color="colors.primary" />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => handleDeletePackage(pkg)}
             >
-              <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+              <Ionicons name="trash-outline" size={20} color="colors.status.error" />
             </TouchableOpacity>
           </View>
         </View>
@@ -474,7 +475,7 @@ const PackageManagementScreen: React.FC = () => {
             disabled={loading.creating || loading.updating}
           >
             {loading.creating || loading.updating ? (
-              <ActivityIndicator size="small" color="#007AFF" />
+              <ActivityIndicator size="small" color="colors.primary" />
             ) : (
               <Text style={styles.modalSave}>Save</Text>
             )}
@@ -577,8 +578,8 @@ const PackageManagementScreen: React.FC = () => {
             <Switch
               value={isTransferrable}
               onValueChange={setIsTransferrable}
-              trackColor={{ false: '#E5E5E5', true: '#007AFF' }}
-              thumbColor="#FFF"
+              trackColor={{ false: 'colors.border.light', true: 'colors.primary' }}
+              thumbColor="colors.text.inverse"
             />
           </View>
 
@@ -599,8 +600,8 @@ const PackageManagementScreen: React.FC = () => {
             <Switch
               value={isActive}
               onValueChange={setIsActive}
-              trackColor={{ false: '#E5E5E5', true: '#007AFF' }}
-              thumbColor="#FFF"
+              trackColor={{ false: 'colors.border.light', true: 'colors.primary' }}
+              thumbColor="colors.text.inverse"
             />
           </View>
         </ScrollView>
@@ -616,7 +617,7 @@ const PackageManagementScreen: React.FC = () => {
           style={styles.createButton}
           onPress={() => setShowCreateModal(true)}
         >
-          <Ionicons name="add" size={24} color="#FFF" />
+          <Ionicons name="add" size={24} color="colors.text.inverse" />
         </TouchableOpacity>
       </View>
 
@@ -629,11 +630,11 @@ const PackageManagementScreen: React.FC = () => {
         ListEmptyComponent={
           loading.bookings ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#007AFF" />
+              <ActivityIndicator size="large" color="colors.primary" />
             </View>
           ) : (
             <View style={styles.emptyState}>
-              <Ionicons name="gift-outline" size={64} color="#C7C7CC" />
+              <Ionicons name="gift-outline" size={64} color="colors.text.tertiary" />
               <Text style={styles.emptyStateTitle}>No Packages Yet</Text>
               <Text style={styles.emptyStateMessage}>
                 Create booking packages to offer discounted service bundles to your clients
@@ -656,7 +657,7 @@ const PackageManagementScreen: React.FC = () => {
         <View style={styles.errorBanner}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity onPress={clearError}>
-            <Ionicons name="close" size={16} color="#FFF" />
+            <Ionicons name="close" size={16} color="colors.text.inverse" />
           </TouchableOpacity>
         </View>
       )}
@@ -664,47 +665,46 @@ const PackageManagementScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, typography: any, spacing: any, borderRadius: any, shadows: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: colors.background.primary,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#FFF',
+    padding: spacing.lg,
+    backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
+    borderBottomColor: colors.border.light,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#333',
+    fontSize: typography.size.xl,
+    fontWeight: typography.weight.bold,
+    color: colors.text.primary,
   },
   createButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: colors.primary,
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadows.sm,
   },
   list: {
     flex: 1,
-    padding: 16,
+    padding: spacing.lg,
   },
   packageCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    ...shadows.sm,
   },
   packageCardInactive: {
     opacity: 0.6,
@@ -713,70 +713,70 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   packageInfo: {
     flex: 1,
   },
   packageName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    fontSize: typography.size.lg,
+    fontWeight: typography.weight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
   },
   packageDescription: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: typography.size.sm,
+    color: colors.text.secondary,
   },
   packageActions: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   actionButton: {
-    padding: 8,
-    marginLeft: 8,
+    padding: spacing.sm,
+    marginLeft: spacing.sm,
   },
   packageDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
-    paddingVertical: 12,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 8,
+    marginBottom: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.background.accent,
+    borderRadius: borderRadius.md,
   },
   packageStat: {
     alignItems: 'center',
     flex: 1,
   },
   packageStatValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#333',
+    fontSize: typography.size.lg,
+    fontWeight: typography.weight.bold,
+    color: colors.text.primary,
   },
   packageStatLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
+    fontSize: typography.size.xs,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
   },
   packagePrice: {
-    color: '#007AFF',
+    color: colors.primary,
   },
   servicesIncluded: {
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   servicesLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
   },
   serviceIncluded: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 2,
+    fontSize: typography.size.sm,
+    color: colors.text.secondary,
+    marginBottom: spacing.xs,
   },
   packageTerms: {
-    paddingTop: 12,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',
   },
@@ -805,19 +805,19 @@ const styles = StyleSheet.create({
   },
   emptyStateMessage: {
     fontSize: 16,
-    color: '#C7C7CC',
+    color: 'colors.text.tertiary',
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 24,
   },
   emptyStateButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: 'colors.primary',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
   emptyStateButtonText: {
-    color: '#FFF',
+    color: 'colors.text.inverse',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -827,7 +827,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: 'colors.text.inverse',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -835,7 +835,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
+    borderBottomColor: 'colors.border.light',
     paddingTop: 50,
   },
   modalCancel: {
@@ -850,7 +850,7 @@ const styles = StyleSheet.create({
   modalSave: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#007AFF',
+    color: 'colors.primary',
   },
   modalContent: {
     flex: 1,
@@ -861,113 +861,118 @@ const styles = StyleSheet.create({
   },
   inputGroupHalf: {
     flex: 1,
-    marginHorizontal: 4,
+    marginHorizontal: spacing.xs,
   },
   inputRow: {
     flexDirection: 'row',
-    marginBottom: 20,
-    marginHorizontal: -4,
+    marginBottom: spacing.xl,
+    marginHorizontal: -spacing.xs,
   },
   inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
   },
   textInput: {
     borderWidth: 1,
-    borderColor: '#E5E5E5',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    borderColor: colors.border.light,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    fontSize: typography.size.md,
+    backgroundColor: colors.background.secondary,
+    color: colors.text.primary,
   },
   textArea: {
     borderWidth: 1,
-    borderColor: '#E5E5E5',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    borderColor: colors.border.light,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    fontSize: typography.size.md,
     minHeight: 80,
     textAlignVertical: 'top',
+    backgroundColor: colors.background.secondary,
+    color: colors.text.primary,
   },
   serviceSelection: {
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   serviceOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 12,
+    padding: spacing.md,
     borderWidth: 1,
-    borderColor: '#E5E5E5',
-    borderRadius: 8,
-    marginBottom: 8,
+    borderColor: colors.border.light,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.background.secondary,
   },
   serviceOptionSelected: {
-    borderColor: '#007AFF',
-    backgroundColor: '#F0F8FF',
+    borderColor: colors.primary,
+    backgroundColor: colors.background.accent,
   },
   serviceInfo: {
     flex: 1,
   },
   serviceName: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 2,
+    fontSize: typography.size.md,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
   },
   serviceNameSelected: {
-    color: '#007AFF',
-    fontWeight: '600',
+    color: colors.primary,
+    fontWeight: typography.weight.semibold,
   },
   servicePrice: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: typography.size.sm,
+    color: colors.text.secondary,
   },
   pricingBreakdown: {
-    backgroundColor: '#F8F9FA',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 20,
+    backgroundColor: colors.background.accent,
+    padding: spacing.lg,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.xl,
   },
   breakdownTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
+    fontSize: typography.size.md,
+    fontWeight: typography.weight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.md,
   },
   breakdownRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   breakdownLabel: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: typography.size.sm,
+    color: colors.text.secondary,
   },
   breakdownValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.semibold,
+    color: colors.text.primary,
   },
   savingsValue: {
-    color: '#34C759',
+    color: colors.status.success,
   },
   switchGroup: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   errorBanner: {
-    backgroundColor: '#D32F2F',
+    backgroundColor: colors.status.error,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 12,
+    padding: spacing.md,
   },
   errorText: {
-    color: '#FFF',
-    fontSize: 14,
+    color: colors.text.inverse,
+    fontSize: typography.size.sm,
     flex: 1,
   },
 });

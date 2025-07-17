@@ -8,6 +8,8 @@ class ApiService {
   private healthCheckInterval?: NodeJS.Timeout;
   private currentBaseURL: string = API_CONFIG.baseURL;
   private fallbackUrls: string[] = API_CONFIG.fallbackUrls || [API_CONFIG.baseURL];
+  private isInitializing: boolean = false;
+  private initializationPromise?: Promise<void>;
 
   constructor() {
     this.client = axios.create({
@@ -20,6 +22,22 @@ class ApiService {
 
   // Initialize connection by finding the best working URL
   private async initializeConnection(): Promise<void> {
+    // Prevent multiple initialization calls
+    if (this.isInitializing) {
+      return this.initializationPromise;
+    }
+    
+    this.isInitializing = true;
+    this.initializationPromise = this.performInitialization();
+    
+    try {
+      await this.initializationPromise;
+    } finally {
+      this.isInitializing = false;
+    }
+  }
+
+  private async performInitialization(): Promise<void> {
     console.log('🚀 Initializing API connection...');
     const workingUrl = await this.findWorkingBaseUrl();
     if (workingUrl) {
@@ -36,12 +54,30 @@ class ApiService {
   private async findWorkingBaseUrl(): Promise<string | null> {
     console.log('🔍 Searching for working base URL...');
     
+    // Test the primary URL first (current base URL)
+    try {
+      console.log(`🌐 Testing primary URL: ${this.currentBaseURL}`);
+      const testClient = axios.create({
+        baseURL: this.currentBaseURL,
+        timeout: 2000, // Very short timeout for primary URL
+      });
+      
+      await testClient.get('/health');
+      console.log(`✅ Primary URL working: ${this.currentBaseURL}`);
+      return this.currentBaseURL;
+    } catch (error) {
+      console.log(`❌ Primary URL failed: ${this.currentBaseURL}`, (error as any).message);
+    }
+    
+    // Only test fallback URLs if primary URL fails
     for (const url of this.fallbackUrls) {
+      if (url === this.currentBaseURL) continue; // Skip primary URL, already tested
+      
       try {
-        console.log(`🌐 Testing connection to: ${url}`);
+        console.log(`🌐 Testing fallback URL: ${url}`);
         const testClient = axios.create({
           baseURL: url,
-          timeout: 5000, // Short timeout for testing
+          timeout: 3000, // Short timeout for fallback testing
         });
         
         await testClient.get('/health');
@@ -78,6 +114,7 @@ class ApiService {
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
           console.log('🔑 Auth token added to request headers');
+          console.log('🔍 Token preview:', token.substring(0, 50) + '...');
         } else {
           console.log('⚠️ No auth token found');
         }
@@ -85,6 +122,7 @@ class ApiService {
         // Log requests in development
         if (DEV_CONFIG.ENABLE_API_LOGGING) {
           console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
+          console.log('🔑 Request headers:', config.headers);
         }
 
         return config;
@@ -116,14 +154,19 @@ class ApiService {
             // Try to refresh token
             const refreshToken = await this.getStoredRefreshToken();
             if (refreshToken) {
+              console.log('🔄 Attempting to refresh expired token...');
               const response = await this.refreshToken(refreshToken);
               if (response.token) {
                 await this.setStoredToken(response.token);
                 originalRequest.headers!.Authorization = `Bearer ${response.token}`;
                 return this.client(originalRequest);
               }
+            } else {
+              console.log('⚠️ No refresh token available, redirecting to login');
+              await this.handleAuthFailure();
             }
           } catch (refreshError) {
+            console.error('❌ Token refresh failed:', refreshError);
             // Refresh failed, redirect to login
             await this.handleAuthFailure();
           }
@@ -152,26 +195,26 @@ class ApiService {
   }
 
   private startHealthCheck() {
-    // Check API health every 30 seconds
+    // Check API health every 60 seconds (reduced frequency)
     this.healthCheckInterval = setInterval(() => {
       this.checkApiHealth();
-    }, 30000);
+    }, 60000);
 
-    // Initial health check
-    this.checkApiHealth();
+    // Skip initial health check to avoid redundant calls
+    // this.checkApiHealth();
   }
 
   private async checkApiHealth(): Promise<void> {
     const startTime = Date.now();
-    const healthUrl = `${API_CONFIG.baseURL}/health`;
+    const healthUrl = `${this.currentBaseURL}/health`;
     
     console.log('🔍 API Health Check starting...', {
       healthUrl,
-      baseURL: API_CONFIG.baseURL
+      baseURL: this.currentBaseURL
     });
     
     try {
-      const response = await axios.get(healthUrl, { timeout: 5000 });
+      const response = await axios.get(healthUrl, { timeout: 3000 });
       const responseTime = Date.now() - startTime;
 
       console.log('✅ API Health Check success:', {
@@ -294,8 +337,28 @@ class ApiService {
   }
 
   private async refreshToken(refreshToken: string): Promise<{ token: string }> {
-    // This would call your refresh token endpoint
-    throw new Error('Token refresh not implemented');
+    try {
+      console.log('🔄 Attempting to refresh token...');
+      
+      // Create a new axios instance without interceptors to avoid infinite loops
+      const refreshClient = axios.create({
+        baseURL: this.currentBaseURL,
+        timeout: API_CONFIG.timeout,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const response = await refreshClient.post('/auth/refresh-token', {
+        token: refreshToken
+      });
+      
+      console.log('✅ Token refresh successful');
+      return { token: response.data.token };
+    } catch (error) {
+      console.error('❌ Token refresh failed:', error);
+      throw new Error('Token refresh failed');
+    }
   }
 
   private async handleAuthFailure(): Promise<void> {

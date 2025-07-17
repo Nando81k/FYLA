@@ -57,4 +57,5 @@ public class User
   public virtual ICollection<Message> ReceivedMessages { get; set; } = new List<Message>();
   public virtual ICollection<UserServiceProviderTag> UserServiceProviderTags { get; set; } = new List<UserServiceProviderTag>();
   public virtual ICollection<BusinessAnalyticsSnapshot> BusinessAnalyticsSnapshots { get; set; } = new List<BusinessAnalyticsSnapshot>();
+  public virtual ICollection<ContentPost> ContentPosts { get; set; } = new List<ContentPost>();
 }

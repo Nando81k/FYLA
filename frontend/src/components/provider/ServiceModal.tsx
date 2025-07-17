@@ -97,10 +97,7 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
       let result: Service;
       
       if (isEditing && editingService) {
-        result = await serviceService.updateService(token, {
-          id: editingService.id,
-          ...serviceData,
-        });
+        result = await serviceService.updateService(token, editingService.id, serviceData);
       } else {
         result = await serviceService.createService(token, serviceData);
       }

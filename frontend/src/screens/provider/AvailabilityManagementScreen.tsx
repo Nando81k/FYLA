@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAuth } from '@/context/AuthContext';
 import { useBooking } from '@/context/BookingContext';
+import { useTheme } from '@/theme/ThemeProvider';
 import {
   AvailabilityRule,
   AvailabilityOverride,
@@ -40,6 +41,10 @@ const ProviderAvailabilityScreen: React.FC = () => {
     error,
     clearError,
   } = useBooking();
+  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+
+  // Create styles with theme
+  const styles = createStyles(colors, typography, spacing, borderRadius, shadows);
 
   // State
   const [localRules, setLocalRules] = useState<AvailabilityRule[]>([]);
@@ -398,7 +403,7 @@ const ProviderAvailabilityScreen: React.FC = () => {
                   <Text style={styles.eventType}>{event.type}</Text>
                 </View>
                 <Text style={styles.eventDate}>
-                  {new Date(event.startDate).toLocaleDateString()} - {new Date(event.endDate).toLocaleDateString()}
+                  {event.startDate ? new Date(event.startDate).toLocaleDateString() : 'N/A'} - {event.endDate ? new Date(event.endDate).toLocaleDateString() : 'N/A'}
                 </Text>
                 {event.description && (
                   <Text style={styles.eventDescription}>{event.description}</Text>
@@ -658,338 +663,427 @@ const ProviderAvailabilityScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, typography: any, spacing: any, borderRadius: any, shadows: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background.primary
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    padding: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
+    borderBottomColor: colors.border,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#333',
+    fontSize: typography.size.lg,
+    fontWeight: typography.weight.bold,
+    color: colors.text.primary,
   },
   saveButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
   },
   saveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#007AFF',
+    color: colors.text.primarynverse,
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.semibold,
   },
-  content: {
+  loadingContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: typography.size.md,
+    color: colors.text.primaryecondary,
   },
   section: {
-    padding: 16,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    padding: spacing.md,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-  },
-  sectionDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 16,
-  },
-  sectionActions: {
-    flexDirection: 'row',
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 12,
-  },
-  actionButtonText: {
-    fontSize: 14,
-    color: '#007AFF',
-    marginLeft: 4,
+    fontSize: typography.size.lg,
+    fontWeight: typography.weight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.md,
   },
   ruleCard: {
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#E5E5E5',
-    borderRadius: 12,
-    marginBottom: 8,
-    backgroundColor: '#FFF',
+    borderColor: colors.border,
+    ...shadows.md,
   },
   ruleHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    marginBottom: spacing.sm,
   },
-  ruleHeaderContent: {
-    flex: 1,
+  ruleDay: {
+    fontSize: typography.size.md,
+    fontWeight: typography.weight.semibold,
+    color: colors.text.primary,
   },
-  dayName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+  ruleToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ruleToggleText: {
+    fontSize: typography.size.sm,
+    color: colors.text.primaryecondary,
+    marginRight: spacing.sm,
   },
   ruleTime: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
+    fontSize: typography.size.sm,
+    color: colors.text.primaryecondary,
+    marginBottom: spacing.sm,
   },
-  ruleHeaderActions: {
+  ruleActions: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
   },
-  ruleDetails: {
-    padding: 16,
-    paddingTop: 0,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-  },
-  timeInputRow: {
-    flexDirection: 'row',
-    marginBottom: 16,
-  },
-  timeInputGroup: {
-    flex: 1,
-    marginRight: 8,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 4,
-  },
-  timeInput: {
+  actionButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: '#E5E5E5',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    borderColor: colors.border,
   },
-  breaksSection: {
-    marginTop: 8,
+  actionButtonText: {
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.medium,
+    color: colors.text.primary,
   },
-  breaksSectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  breaksTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  addBreakButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  addBreakText: {
-    fontSize: 14,
-    color: '#007AFF',
-    marginLeft: 4,
-  },
-  breakInterval: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 8,
-    padding: 12,
-  },
-  breakNameInput: {
-    flex: 1,
-    fontSize: 14,
-    marginRight: 8,
-  },
-  breakTimeInputs: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  breakTimeInput: {
+  overrideCard: {
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#E5E5E5',
-    borderRadius: 6,
-    padding: 8,
-    fontSize: 12,
-    width: 60,
-    textAlign: 'center',
+    borderColor: colors.border,
+    ...shadows.md,
   },
-  timeSeparator: {
-    marginHorizontal: 4,
-    fontSize: 12,
-    color: '#666',
+  overrideDate: {
+    fontSize: typography.size.md,
+    fontWeight: typography.weight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
   },
-  removeBreakButton: {
-    padding: 4,
+  overrideType: {
+    fontSize: typography.size.sm,
+    color: colors.text.primaryecondary,
+    marginBottom: spacing.sm,
+  },
+  overrideTime: {
+    fontSize: typography.size.sm,
+    color: colors.text.primaryecondary,
   },
   eventCard: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
-  },
-  eventHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.md,
   },
   eventTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  eventType: {
-    fontSize: 12,
-    color: '#666',
-    textTransform: 'uppercase',
-    backgroundColor: '#E5E5E5',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
+    fontSize: typography.size.md,
+    fontWeight: typography.weight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
   },
   eventDate: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
+    fontSize: typography.size.sm,
+    color: colors.text.primaryecondary,
+    marginBottom: spacing.sm,
   },
   eventDescription: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: typography.size.sm,
+    color: colors.text.primaryecondary,
   },
-  emptyState: {
-    padding: 20,
+  addButton: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
     alignItems: 'center',
+    marginTop: spacing.md,
   },
-  emptyStateText: {
-    fontSize: 16,
-    color: '#666',
+  addButtonText: {
+    color: colors.text.primarynverse,
+    fontSize: typography.size.md,
+    fontWeight: typography.weight.semibold,
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    width: '90%',
+    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-    paddingTop: Platform.OS === 'ios' ? 50 : 16,
-  },
-  modalCancel: {
-    fontSize: 16,
-    color: '#666',
+    marginBottom: spacing.lg,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: typography.size.lg,
+    fontWeight: typography.weight.bold,
+    color: colors.text.primary,
   },
-  modalSave: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#007AFF',
-  },
-  modalContent: {
+  ruleHeaderContent: {
     flex: 1,
-    padding: 16,
   },
-  inputGroup: {
-    marginBottom: 20,
+  dayName: {
+    fontSize: typography.size.md,
+    fontWeight: typography.weight.semibold,
+    color: colors.text.primary,
   },
-  textInput: {
+  ruleHeaderActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  ruleDetails: {
+    padding: spacing.md,
+  },
+  timeInputRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  timeInputGroup: {
+    flex: 1,
+  },
+  inputLabel: {
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.medium,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  timeInput: {
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#E5E5E5',
+    borderColor: colors.border,
     borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    padding: spacing.sm,
+    fontSize: typography.size.md,
+    color: colors.text.primary,
   },
-  textArea: {
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    minHeight: 80,
-    textAlignVertical: 'top',
+  breaksSection: {
+    marginTop: spacing.md,
   },
-  dateSelector: {
+  breaksSectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
+    marginBottom: spacing.sm,
+  },
+  breaksTitle: {
+    fontSize: typography.size.md,
+    fontWeight: typography.weight.semibold,
+    color: colors.text.primary,
+  },
+  addBreakButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     borderRadius: 8,
-    padding: 12,
+  },
+  addBreakText: {
+    color: colors.white,
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.medium,
+  },
+  breakInterval: {
+    backgroundColor: colors.surface,
+    padding: spacing.sm,
+    borderRadius: 8,
+    marginBottom: spacing.sm,
+  },
+  breakNameInput: {
+    backgroundColor: colors.background.primary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: spacing.sm,
+    fontSize: typography.size.sm,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+  },
+  breakTimeInputs: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  breakTimeInput: {
+    backgroundColor: colors.background.primary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: spacing.sm,
+    fontSize: typography.size.sm,
+    color: colors.text.primary,
+    flex: 1,
+  },
+  timeSeparator: {
+    fontSize: typography.size.md,
+    color: colors.text.primary,
+  },
+  removeBreakButton: {
+    backgroundColor: colors.error,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 8,
+    marginLeft: spacing.sm,
+  },
+  content: {
+    flex: 1,
+    padding: spacing.md,
+  },
+  sectionDescription: {
+    fontSize: typography.size.md,
+    color: colors.text.primaryecondary,
+    marginBottom: spacing.lg,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  sectionActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  eventHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  eventType: {
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.medium,
+    color: colors.primary,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xl,
+  },
+  emptyStateText: {
+    fontSize: typography.size.md,
+    color: colors.text.primaryecondary,
+    textAlign: 'center',
+  },
+  modalCancel: {
+    color: colors.text.primaryecondary,
+    fontSize: typography.size.md,
+    fontWeight: typography.weight.medium,
+  },
+  modalSave: {
+    color: colors.primary,
+    fontSize: typography.size.md,
+    fontWeight: typography.weight.semibold,
+  },
+  inputGroup: {
+    marginBottom: spacing.md,
+  },
+  dateSelector: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: spacing.sm,
   },
   dateSelectorText: {
-    fontSize: 16,
-    color: '#333',
+    fontSize: typography.size.md,
+    color: colors.text.primary,
   },
   switchRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  textArea: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: spacing.sm,
+    fontSize: typography.size.md,
+    color: colors.text.primary,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  textInput: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: spacing.sm,
+    fontSize: typography.size.md,
+    color: colors.text.primary,
+  },
   eventTypeButtons: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   eventTypeButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#E5E5E5',
+    borderColor: colors.border,
     borderRadius: 8,
-    marginRight: 8,
-    marginBottom: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    flex: 1,
   },
   eventTypeButtonSelected: {
-    borderColor: '#007AFF',
-    backgroundColor: '#007AFF',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   eventTypeButtonText: {
-    fontSize: 14,
-    color: '#333',
+    fontSize: typography.size.sm,
+    color: colors.text.primary,
+    textAlign: 'center',
   },
   eventTypeButtonTextSelected: {
-    color: '#FFF',
+    color: colors.white,
   },
   dateRow: {
     flexDirection: 'row',
-    marginBottom: 20,
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
   dateInputGroup: {
     flex: 1,
-    marginRight: 8,
   },
   errorBanner: {
-    backgroundColor: '#D32F2F',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
+    backgroundColor: colors.error,
+    padding: spacing.sm,
+    borderRadius: 8,
+    marginBottom: spacing.md,
   },
   errorText: {
-    color: '#FFF',
-    fontSize: 14,
-    flex: 1,
+    color: colors.white,
+    fontSize: typography.size.sm,
+    textAlign: 'center',
   },
 });
 

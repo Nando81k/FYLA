@@ -61,7 +61,7 @@ interface NotificationProviderProps {
 }
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
-  const { user, token: authToken } = useAuth();
+  const { user, token: authToken, isLoading: authLoading } = useAuth();
   const navigation = useNavigation();
   
   // Basic state
@@ -83,13 +83,16 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (user && authToken) {
+    if (!authLoading && user && authToken) {
       initializeNotifications();
     }
-  }, [user, authToken]);
+  }, [user, authToken, authLoading]);
 
   useEffect(() => {
-    setupNotificationListeners();
+    // Only setup listeners if auth is not loading
+    if (!authLoading) {
+      setupNotificationListeners();
+    }
     
     return () => {
       // Cleanup listeners
@@ -102,9 +105,13 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       notificationService.off('badgeUpdated', handleBadgeUpdated);
       notificationService.off('websocketConnected', handleWebSocketConnected);
     };
-  }, []);
+  }, [authLoading]);
 
   const initializeNotifications = async () => {
+    if (authLoading || !user || !authToken) {
+      return;
+    }
+    
     try {
       setIsLoading(true);
       await notificationService.initialize();
@@ -118,12 +125,42 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       setBadgeCount(currentBadgeCount);
       
       if (user) {
-        // Load enhanced notification data
-        await Promise.all([
-          loadNotifications(),
-          loadSettings(),
-          loadBadgeData(),
-        ]);
+        // Load enhanced notification data - temporarily disabled due to backend not implemented
+        try {
+          await Promise.all([
+            loadNotifications(),
+            loadSettings(),
+            loadBadgeData(),
+          ]);
+        } catch (error) {
+          console.warn('Notification API calls failed, using mock data:', error);
+          // Set mock data
+          setNotifications([]);
+          setSettings({
+            userId: user?.id || 0,
+            pushEnabled: true,
+            bookingNotifications: true,
+            messageNotifications: true,
+            socialNotifications: true,
+            promotionalNotifications: false,
+            inAppEnabled: true,
+            soundEnabled: true,
+            vibrationEnabled: true,
+            quietHoursEnabled: false,
+            quietHoursStart: '22:00',
+            quietHoursEnd: '08:00',
+            emailEnabled: false,
+            dailyDigest: false,
+            weeklyDigest: false,
+            smsEnabled: false,
+            urgentSmsOnly: true,
+          });
+          setBadgeData({
+            total: 0,
+            unread: 0,
+            byType: {} as Record<NotificationType, number>,
+          });
+        }
       }
       
       setIsInitialized(true);
@@ -161,10 +198,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   };
 
   const loadSettings = async () => {
-    if (!user) return;
+    if (!user?.id) return;
     
     try {
-      const userSettings = await notificationService.getNotificationSettings(user.id);
+      const userSettings = await notificationService.getNotificationSettings(user.id!);
       setSettings(userSettings);
     } catch (error) {
       console.error('Failed to load notification settings:', error);
@@ -172,10 +209,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   };
 
   const loadBadgeData = async () => {
-    if (!user) return;
+    if (!user?.id) return;
     
     try {
-      const badge = await notificationService.getBadgeData(user.id);
+      const badge = await notificationService.getBadgeData(user.id!);
       setBadgeData(badge);
     } catch (error) {
       console.error('Failed to load badge data:', error);
@@ -253,7 +290,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const handleNavigateToAppointment = (data: { appointmentId: number }) => {
     // Navigate to appointment details or calendar
-    if (user && 'role' in user && user.role === UserRole.PROVIDER) {
+    if (user && user.role && user.role === UserRole.PROVIDER) {
       (navigation as any).navigate('Calendar');
     } else {
       (navigation as any).navigate('Bookings');

@@ -208,3 +208,64 @@ export interface GetCommentsResponse {
   total: number;
   hasMore: boolean;
 }
+
+// New Content System Types
+export interface ContentPost {
+  id: number;
+  content: string;
+  imageUrl?: string;
+  createdAt: string;
+  updatedAt?: string;
+  providerId: number;
+  providerName: string;
+  providerProfileImageUrl?: string;
+  likesCount: number;
+  commentsCount: number;
+  isLikedByCurrentUser: boolean;
+  services: ContentService[];
+  recentComments: ContentComment[];
+  type?: 'Update' | 'Promotion' | 'ServiceShowcase' | 'Educational' | 'BehindTheScenes';
+  isActive?: boolean;
+  isFeatured?: boolean;
+  promotionTitle?: string;
+  discountPercentage?: number;
+  discountAmount?: number;
+  promotionStartDate?: string;
+  promotionEndDate?: string;
+}
+
+export interface ContentService {
+  id: number;
+  name: string;
+  description?: string;
+  price: number;
+  estimatedDurationMinutes: number;
+}
+
+export interface ContentComment {
+  id: number;
+  comment: string;
+  createdAt: string;
+  updatedAt?: string;
+  userId: number;
+  userName: string;
+  userProfileImageUrl?: string;
+}
+
+export interface CreateContentPost {
+  content: string;
+  imageUrl?: string;
+  serviceIds?: number[];
+}
+
+export interface CreateContentComment {
+  comment: string;
+}
+
+export interface ContentFeed {
+  posts: ContentPost[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  hasNextPage: boolean;
+}

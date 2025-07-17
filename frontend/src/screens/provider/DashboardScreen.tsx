@@ -9,7 +9,8 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  RefreshControl
+  RefreshControl,
+  Animated
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
@@ -18,6 +19,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { ProviderDashboardStackParamList } from '@/types';
 import { analyticsService } from '@/services/analyticsService';
 import { useNotifications } from '@/context/NotificationContext';
+import { useTheme } from '@/theme/ThemeProvider';
 import NotificationCenter from '@/components/provider/NotificationCenter';
 import { 
   AnalyticsData, 
@@ -34,6 +36,7 @@ const DashboardScreen: React.FC = () => {
   const { user, token, logout } = useAuth();
   const navigation = useNavigation<DashboardNavigationProp>();
   const { notifications, unreadCount } = useNotifications();
+  const { colors, typography, spacing, borderRadius, shadows, isDark, toggleTheme } = useTheme();
   
   // State management
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
@@ -43,6 +46,10 @@ const DashboardScreen: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<AnalyticsPeriod>(AnalyticsPeriod.MONTH);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [themeScale] = useState(new Animated.Value(1));
+
+  // Create styles with theme
+  const styles = createStyles(colors, typography, spacing, borderRadius, shadows);
 
   useEffect(() => {
     loadDashboardData();
@@ -83,6 +90,24 @@ const DashboardScreen: React.FC = () => {
     }
   };
 
+  const handleThemeToggle = () => {
+    // Animate the theme toggle button
+    Animated.sequence([
+      Animated.timing(themeScale, {
+        toValue: 0.8,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(themeScale, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    
+    toggleTheme();
+  };
+
   const formatCurrency = (amount: number): string => {
     return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
   };
@@ -93,30 +118,21 @@ const DashboardScreen: React.FC = () => {
 
   const quickActions = [
     {
-      id: 'business-hours',
-      title: 'Business Hours',
-      subtitle: 'Set your working hours',
-      icon: 'time' as keyof typeof Ionicons.glyphMap,
-      color: '#3b82f6',
-      bgColor: '#dbeafe',
-      onPress: () => navigation.navigate('BusinessHours'),
-    },
-    {
       id: 'analytics',
       title: 'Analytics',
       subtitle: 'View detailed insights',
       icon: 'analytics' as keyof typeof Ionicons.glyphMap,
-      color: '#8b5cf6',
-      bgColor: '#ede9fe',
+      color: colors.primary,
+      bgColor: colors.background.accent,
       onPress: () => navigation.navigate('Analytics'),
     },
     {
       id: 'availability',
       title: 'Availability',
       subtitle: 'Manage your schedule',
-      icon: 'time' as keyof typeof Ionicons.glyphMap,
-      color: '#06b6d4',
-      bgColor: '#cffafe',
+      icon: 'calendar' as keyof typeof Ionicons.glyphMap,
+      color: colors.accent,
+      bgColor: colors.background.accent,
       onPress: () => navigation.navigate('AvailabilityManagement'),
     },
     {
@@ -124,8 +140,8 @@ const DashboardScreen: React.FC = () => {
       title: 'Booking Management',
       subtitle: 'View & manage bookings',
       icon: 'calendar-outline' as keyof typeof Ionicons.glyphMap,
-      color: '#10b981',
-      bgColor: '#d1fae5',
+      color: colors.status.success,
+      bgColor: colors.background.accent,
       onPress: () => navigation.navigate('BookingManagement'),
     },
     {
@@ -133,26 +149,17 @@ const DashboardScreen: React.FC = () => {
       title: 'Packages',
       subtitle: 'Create service packages',
       icon: 'gift' as keyof typeof Ionicons.glyphMap,
-      color: '#8b5cf6',
-      bgColor: '#ede9fe',
+      color: colors.primary,
+      bgColor: colors.background.accent,
       onPress: () => navigation.navigate('PackageManagement'),
-    },
-    {
-      id: 'calendar',
-      title: 'Calendar',
-      subtitle: 'Manage appointments',
-      icon: 'calendar' as keyof typeof Ionicons.glyphMap,
-      color: '#10b981',
-      bgColor: '#d1fae5',
-      onPress: () => navigation.navigate('Calendar'),
     },
     {
       id: 'clients',
       title: 'Client Management',
       subtitle: 'View client insights',
       icon: 'people' as keyof typeof Ionicons.glyphMap,
-      color: '#f59e0b',
-      bgColor: '#fef3c7',
+      color: colors.accent,
+      bgColor: colors.background.accent,
       onPress: () => navigation.navigate('ClientManagement'),
     },
   ];
@@ -189,8 +196,8 @@ const DashboardScreen: React.FC = () => {
         title: 'Total Revenue',
         value: formatCurrency(analytics?.totalRevenue || 0),
         icon: 'cash' as keyof typeof Ionicons.glyphMap,
-        color: '#059669',
-        bgColor: '#dcfce7',
+        color: colors.status.success,
+        bgColor: colors.background.accent,
         trend: (analytics?.revenueGrowth || 0) > 0 ? 'up' : 'down',
         trendValue: formatPercentage(Math.abs(analytics?.revenueGrowth || 0)),
       },
@@ -198,24 +205,24 @@ const DashboardScreen: React.FC = () => {
         title: 'Total Appointments',
         value: (analytics?.totalAppointments || 0).toString(),
         icon: 'calendar' as keyof typeof Ionicons.glyphMap,
-        color: '#3b82f6',
-        bgColor: '#dbeafe',
+        color: colors.primary,
+        bgColor: colors.background.accent,
         subtitle: `${appointments?.totalUpcoming || 0} upcoming`,
       },
       {
         title: 'Available Payout',
         value: formatCurrency(earnings?.availableForPayout || 0),
         icon: 'card' as keyof typeof Ionicons.glyphMap,
-        color: '#8b5cf6',
-        bgColor: '#ede9fe',
+        color: colors.accent,
+        bgColor: colors.background.accent,
         subtitle: `${formatCurrency(earnings?.pendingPayouts || 0)} pending`,
       },
       {
         title: 'Average Rating',
         value: (analytics?.averageRating || 0).toFixed(1),
         icon: 'star' as keyof typeof Ionicons.glyphMap,
-        color: '#f59e0b',
-        bgColor: '#fef3c7',
+        color: colors.accent,
+        bgColor: colors.background.accent,
         subtitle: `${(analytics?.completionRate || 0).toFixed(1)}% completion`,
       },
     ];
@@ -284,15 +291,15 @@ const DashboardScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>Appointments Summary</Text>
         <View style={styles.appointmentGrid}>
           <View style={styles.appointmentCard}>
-            <Text style={styles.appointmentNumber}>{appointments.totalToday || 0}</Text>
+            <Text style={[styles.appointmentNumber, { color: colors.primary }]}>{appointments.totalToday || 0}</Text>
             <Text style={styles.appointmentLabel}>Today</Text>
           </View>
           <View style={styles.appointmentCard}>
-            <Text style={styles.appointmentNumber}>{appointments.totalThisWeek || 0}</Text>
+            <Text style={[styles.appointmentNumber, { color: colors.primary }]}>{appointments.totalThisWeek || 0}</Text>
             <Text style={styles.appointmentLabel}>This Week</Text>
           </View>
           <View style={styles.appointmentCard}>
-            <Text style={styles.appointmentNumber}>{appointments.totalUpcoming || 0}</Text>
+            <Text style={[styles.appointmentNumber, { color: colors.primary }]}>{appointments.totalUpcoming || 0}</Text>
             <Text style={styles.appointmentLabel}>Upcoming</Text>
           </View>
         </View>
@@ -316,17 +323,17 @@ const DashboardScreen: React.FC = () => {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3b82f6" />
-          <Text style={styles.loadingText}>Loading dashboard...</Text>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.text.secondary }]}>Loading dashboard...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <ScrollView 
         style={styles.scrollContainer} 
         showsVerticalScrollIndicator={false}
@@ -334,8 +341,8 @@ const DashboardScreen: React.FC = () => {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={() => loadDashboardData(true)}
-            colors={['#3b82f6']}
-            tintColor="#3b82f6"
+            colors={[colors.primary]}
+            tintColor={colors.primary}
           />
         }
       >
@@ -348,11 +355,20 @@ const DashboardScreen: React.FC = () => {
               <Text style={styles.roleText}>Service Provider</Text>
             </View>
             <View style={styles.headerActions}>
+              <Animated.View style={{ transform: [{ scale: themeScale }] }}>
+                <TouchableOpacity onPress={handleThemeToggle} style={styles.themeToggle}>
+                  <Ionicons 
+                    name={isDark ? "sunny" : "moon"} 
+                    size={20} 
+                    color={colors.text.secondary} 
+                  />
+                </TouchableOpacity>
+              </Animated.View>
               <TouchableOpacity 
                 style={styles.notificationButton} 
                 onPress={() => setShowNotifications(true)}
               >
-                <Ionicons name="notifications-outline" size={24} color="#6b7280" />
+                <Ionicons name="notifications-outline" size={24} color={colors.text.secondary} />
                 {unreadCount > 0 && (
                   <View style={styles.notificationBadge}>
                     <Text style={styles.notificationBadgeText}>{unreadCount}</Text>
@@ -360,7 +376,7 @@ const DashboardScreen: React.FC = () => {
                 )}
               </TouchableOpacity>
               <TouchableOpacity style={styles.settingsButton} onPress={logout}>
-                <Ionicons name="log-out-outline" size={24} color="#6b7280" />
+                <Ionicons name="log-out-outline" size={24} color={colors.text.secondary} />
               </TouchableOpacity>
             </View>
           </View>
@@ -388,10 +404,10 @@ const DashboardScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, typography: any, spacing: any, borderRadius: any, shadows: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background.primary,
   },
   loadingContainer: {
     flex: 1,
@@ -399,241 +415,258 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#6b7280',
-    fontWeight: '500',
+    marginTop: spacing.md,
+    fontSize: typography.size.md,
+    color: colors.text.secondary,
+    fontWeight: typography.weight.medium,
   },
   scrollContainer: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 32,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xxl,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 24,
+    marginBottom: spacing.lg,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 4,
+    fontSize: typography.size.xxl,
+    fontWeight: typography.weight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 18,
-    color: '#666',
-    marginBottom: 4,
+    fontSize: typography.size.lg,
+    color: colors.text.secondary,
+    marginBottom: spacing.xs,
   },
   roleText: {
-    fontSize: 14,
-    color: '#8b5cf6',
-    fontWeight: '500',
-  },
-  settingsButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: 'white',
-    marginLeft: 8,
+    fontSize: typography.size.sm,
+    color: colors.primary,
+    fontWeight: typography.weight.semibold,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
+  },
+  themeToggle: {
+    padding: spacing.sm,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.background.secondary,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    ...shadows.sm,
   },
   notificationButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: 'white',
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.background.secondary,
     position: 'relative',
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    ...shadows.sm,
   },
   notificationBadge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: '#ef4444',
-    borderRadius: 8,
+    top: spacing.xs,
+    right: spacing.xs,
+    backgroundColor: colors.status.error,
+    borderRadius: borderRadius.full,
     minWidth: 16,
-    paddingHorizontal: 4,
+    paddingHorizontal: spacing.xs,
     paddingVertical: 1,
   },
   notificationBadgeText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: '600',
+    color: colors.text.inverse,
+    fontSize: typography.size.xs,
+    fontWeight: typography.weight.bold,
     textAlign: 'center',
+  },
+  settingsButton: {
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.background.secondary,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    ...shadows.sm,
   },
   periodSelector: {
     flexDirection: 'row',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 20,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xs,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    ...shadows.sm,
   },
   periodButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: borderRadius.md,
   },
   periodButtonActive: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: colors.primary,
+    ...shadows.sm,
   },
   periodButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6b7280',
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.medium,
+    color: colors.text.secondary,
   },
   periodButtonTextActive: {
-    color: 'white',
+    color: colors.text.inverse,
+    fontWeight: typography.weight.semibold,
   },
   overviewContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 24,
-    gap: 12,
+    marginBottom: spacing.lg,
+    gap: spacing.md,
   },
   overviewCard: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
     width: (screenWidth - 44) / 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    ...shadows.sm,
   },
   cardIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: borderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   cardContent: {
     flex: 1,
   },
   cardTitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 4,
+    fontSize: typography.size.sm,
+    color: colors.text.secondary,
+    marginBottom: spacing.xs,
+    fontWeight: typography.weight.medium,
   },
   cardValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 4,
+    fontSize: typography.size.xl,
+    fontWeight: typography.weight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
   },
   cardSubtitle: {
-    fontSize: 12,
-    color: '#9ca3af',
+    fontSize: typography.size.xs,
+    color: colors.text.tertiary,
   },
   trendContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
   trendText: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginLeft: 4,
+    fontSize: typography.size.xs,
+    fontWeight: typography.weight.medium,
+    marginLeft: spacing.xs,
   },
   appointmentSummary: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    ...shadows.sm,
   },
   appointmentGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   appointmentCard: {
     alignItems: 'center',
     flex: 1,
   },
   appointmentNumber: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#3b82f6',
-    marginBottom: 4,
+    fontSize: typography.size.xxl,
+    fontWeight: typography.weight.bold,
+    color: colors.primary,
+    marginBottom: spacing.xs,
   },
   appointmentLabel: {
-    fontSize: 14,
-    color: '#6b7280',
+    fontSize: typography.size.sm,
+    color: colors.text.secondary,
+    fontWeight: typography.weight.medium,
   },
   appointmentDetails: {
     borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
-    paddingTop: 16,
+    borderTopColor: colors.border.light,
+    paddingTop: spacing.lg,
   },
   appointmentDetailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   appointmentDetailLabel: {
-    fontSize: 14,
-    color: '#6b7280',
+    fontSize: typography.size.sm,
+    color: colors.text.secondary,
+    fontWeight: typography.weight.medium,
   },
   appointmentDetailValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.semibold,
+    color: colors.text.primary,
   },
   quickActionsContainer: {
-    marginBottom: 32,
+    marginBottom: spacing.xxl,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 16,
+    fontSize: typography.size.lg,
+    fontWeight: typography.weight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.lg,
   },
   actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: spacing.md,
   },
   actionCard: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
     width: (screenWidth - 44) / 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    ...shadows.sm,
   },
   actionIcon: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: borderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   actionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 4,
+    fontSize: typography.size.md,
+    fontWeight: typography.weight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
   },
   actionSubtitle: {
-    fontSize: 14,
-    color: '#6b7280',
+    fontSize: typography.size.sm,
+    color: colors.text.secondary,
     lineHeight: 18,
   },
 });

@@ -34,4 +34,5 @@ public class Service
 
   public virtual ICollection<AppointmentService> AppointmentServices { get; set; } = new List<AppointmentService>();
   public virtual ICollection<BusinessAnalyticsSnapshot> BusinessAnalyticsSnapshots { get; set; } = new List<BusinessAnalyticsSnapshot>();
+  public virtual ICollection<ContentPost> ContentPosts { get; set; } = new List<ContentPost>();
 }

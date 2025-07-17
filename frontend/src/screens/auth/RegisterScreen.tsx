@@ -2,335 +2,161 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
   Alert,
   ActivityIndicator,
+  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
-import { useAuth } from '@/context/AuthContext';
-import { RegisterRequest, UserRole } from '@/types';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../theme/ThemeProvider';
+import { AuthStackParamList, UserRole } from '../../types';
 
-interface RegisterScreenProps {
-  selectedRole: UserRole;
-  onNavigateToLogin: () => void;
-  onBack: () => void;
-}
+type AuthNavigationProp = StackNavigationProp<AuthStackParamList>;
 
-const RegisterScreen: React.FC<RegisterScreenProps> = ({
-  selectedRole,
-  onNavigateToLogin,
-  onBack,
-}) => {
+const RegisterScreen: React.FC = () => {
+  const route = useRoute<RouteProp<AuthStackParamList, 'Register'>>();
+  const userType = route.params?.userType || UserRole.CLIENT;
+
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
   const { register } = useAuth();
-  
-  const {
-    control,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<RegisterRequest>();
+  const { colors, isDark } = useTheme();
+  const navigation = useNavigation<AuthNavigationProp>();
 
-  const password = watch('password');
+  const isProvider = userType === UserRole.PROVIDER;
 
-  const onSubmit = async (data: RegisterRequest) => {
+  const handleRegister = async () => {
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password.trim()) {
+      Alert.alert('Registration Failed', 'Please fill in all required fields.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Registration Failed', 'Passwords do not match.');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Registration Failed', 'Password must be at least 6 characters long.');
+      return;
+    }
+
     setIsLoading(true);
     try {
       await register({
-        ...data,
-        role: selectedRole,
+        fullName: `${firstName.trim()} ${lastName.trim()}`,
+        email: email.trim(),
+        password,
+        confirmPassword,
+        phoneNumber: phone.trim(),
+        role: userType,
       });
+      // On success, you might want to navigate to a confirmation screen or back to login
+      Alert.alert('Success', 'Your account has been created successfully. Please sign in.');
+      navigation.navigate('Login');
     } catch (error) {
-      Alert.alert(
-        'Registration Failed',
-        error instanceof Error ? error.message : 'An unexpected error occurred'
-      );
+      Alert.alert('Registration Failed', 'An error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const title = isProvider ? 'Become a Provider' : 'Create an Account';
+  const subtitle = isProvider ? 'Share your expertise with local clients' : 'Discover amazing local services';
+  const buttonTitle = isProvider ? 'Start Providing Services' : 'Create Account';
+  const primaryColor = isProvider ? '#D4AF37' : colors.primary;
+
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+    <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardAvoidingView}
+        >
           <View style={styles.content}>
-            <View style={styles.header}>
-              <TouchableOpacity style={styles.backButton} onPress={onBack}>
-                <Text style={styles.backButtonText}>← Back</Text>
-              </TouchableOpacity>
-              <Text style={styles.title}>Create Account</Text>
-              <Text style={styles.subtitle}>
-                Sign up as a {selectedRole === UserRole.CLIENT ? 'Client' : 'Service Provider'}
-              </Text>
-            </View>
-
-            <View style={styles.form}>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Full Name</Text>
-                <Controller
-                  control={control}
-                  name="fullName"
-                  rules={{
-                    required: 'Full name is required',
-                    minLength: {
-                      value: 2,
-                      message: 'Name must be at least 2 characters',
-                    },
-                  }}
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <TextInput
-                      style={[styles.input, errors.fullName && styles.inputError]}
-                      placeholder="Enter your full name"
-                      placeholderTextColor="#999"
-                      value={value}
-                      onBlur={onBlur}
-                      onChangeText={onChange}
-                      autoCapitalize="words"
-                    />
-                  )}
-                />
-                {errors.fullName && <Text style={styles.errorText}>{errors.fullName.message}</Text>}
+              {/* Header */}
+              <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                  <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
+                </TouchableOpacity>
+                <Ionicons name={isProvider ? "briefcase" : "person"} size={40} color={primaryColor} />
+                <Text style={[styles.title, { color: colors.text.primary, fontWeight: 'bold' }]}>{title}</Text>
+                <Text style={[styles.subtitle, { color: colors.text.secondary }]}>{subtitle}</Text>
               </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Email</Text>
-                <Controller
-                  control={control}
-                  name="email"
-                  rules={{
-                    required: 'Email is required',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address',
-                    },
-                  }}
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <TextInput
-                      style={[styles.input, errors.email && styles.inputError]}
-                      placeholder="Enter your email"
-                      placeholderTextColor="#999"
-                      value={value}
-                      onBlur={onBlur}
-                      onChangeText={onChange}
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                    />
-                  )}
-                />
-                {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
+              {/* Form */}
+              <View style={[
+                styles.formContainer,
+                {
+                  backgroundColor: isDark ? 'rgba(42, 42, 46, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(229, 229, 231, 0.5)',
+                }
+              ]}>
+                <View style={styles.row}>
+                  <TextInput style={[styles.input, styles.halfWidth, { color: colors.text.primary, borderBottomColor: colors.border.light }]} placeholder="First Name" placeholderTextColor={colors.text.secondary} value={firstName} onChangeText={setFirstName} />
+                  <TextInput style={[styles.input, styles.halfWidth, { color: colors.text.primary, borderBottomColor: colors.border.light }]} placeholder="Last Name" placeholderTextColor={colors.text.secondary} value={lastName} onChangeText={setLastName} />
+                </View>
+                <TextInput style={[styles.input, { color: colors.text.primary, borderBottomColor: colors.border.light }]} placeholder="Email" placeholderTextColor={colors.text.secondary} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+                <TextInput style={[styles.input, { color: colors.text.primary, borderBottomColor: colors.border.light }]} placeholder="Phone Number" placeholderTextColor={colors.text.secondary} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+                
+                <TextInput style={[styles.input, { color: colors.text.primary, borderBottomColor: colors.border.light }]} placeholder="Password" placeholderTextColor={colors.text.secondary} value={password} onChangeText={setPassword} secureTextEntry />
+                <TextInput style={[styles.input, { color: colors.text.primary, borderBottomColor: colors.border.light }]} placeholder="Confirm Password" placeholderTextColor={colors.text.secondary} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry />
+
+                <TouchableOpacity
+                  style={[styles.registerButton, { backgroundColor: primaryColor }]}
+                  onPress={handleRegister}
+                  disabled={isLoading}
+                >
+                  {isLoading
+                    ? <ActivityIndicator color={colors.text.inverse} />
+                    : <Text style={[styles.registerButtonText, { color: colors.text.inverse, fontWeight: '600' }]}>{buttonTitle}</Text>}
+                </TouchableOpacity>
               </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Phone Number</Text>
-                <Controller
-                  control={control}
-                  name="phoneNumber"
-                  rules={{
-                    required: 'Phone number is required',
-                    pattern: {
-                      value: /^[\+]?[1-9][\d]{0,15}$/,
-                      message: 'Invalid phone number',
-                    },
-                  }}
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <TextInput
-                      style={[styles.input, errors.phoneNumber && styles.inputError]}
-                      placeholder="Enter your phone number"
-                      placeholderTextColor="#999"
-                      value={value}
-                      onBlur={onBlur}
-                      onChangeText={onChange}
-                      keyboardType="phone-pad"
-                    />
-                  )}
-                />
-                {errors.phoneNumber && <Text style={styles.errorText}>{errors.phoneNumber.message}</Text>}
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Password</Text>
-                <Controller
-                  control={control}
-                  name="password"
-                  rules={{
-                    required: 'Password is required',
-                    minLength: {
-                      value: 6,
-                      message: 'Password must be at least 6 characters',
-                    },
-                  }}
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <TextInput
-                      style={[styles.input, errors.password && styles.inputError]}
-                      placeholder="Create a password"
-                      placeholderTextColor="#999"
-                      value={value}
-                      onBlur={onBlur}
-                      onChangeText={onChange}
-                      secureTextEntry
-                    />
-                  )}
-                />
-                {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Confirm Password</Text>
-                <Controller
-                  control={control}
-                  name="confirmPassword"
-                  rules={{
-                    required: 'Please confirm your password',
-                    validate: (value) => value === password || 'Passwords do not match',
-                  }}
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <TextInput
-                      style={[styles.input, errors.confirmPassword && styles.inputError]}
-                      placeholder="Confirm your password"
-                      placeholderTextColor="#999"
-                      value={value}
-                      onBlur={onBlur}
-                      onChangeText={onChange}
-                      secureTextEntry
-                    />
-                  )}
-                />
-                {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword.message}</Text>}
-              </View>
-
-              <TouchableOpacity
-                style={[styles.registerButton, isLoading && styles.buttonDisabled]}
-                onPress={handleSubmit(onSubmit)}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={styles.registerButtonText}>Create Account</Text>
-                )}
+              <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.loginLink}>
+                <Text style={[styles.loginLinkText, { color: colors.text.secondary }]}>
+                  Already have an account? Sign In
+                </Text>
               </TouchableOpacity>
             </View>
-
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account? </Text>
-              <TouchableOpacity onPress={onNavigateToLogin}>
-                <Text style={styles.linkText}>Sign In</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 40,
-  },
-  header: {
-    marginBottom: 32,
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    marginBottom: 16,
-  },
-  backButtonText: {
-    color: '#3b82f6',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-  },
-  form: {
-    marginBottom: 32,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    backgroundColor: 'white',
-  },
-  inputError: {
-    borderColor: '#ef4444',
-  },
-  errorText: {
-    color: '#ef4444',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  registerButton: {
-    backgroundColor: '#3b82f6',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  registerButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  footerText: {
-    color: '#666',
-    fontSize: 14,
-  },
-  linkText: {
-    color: '#3b82f6',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  container: { flex: 1 },
+  safeArea: { flex: 1 },
+  keyboardAvoidingView: { flex: 1 },
+  content: { flex: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 20 },
+  header: { alignItems: 'center', marginBottom: 24 },
+  backButton: { position: 'absolute', top: 0, left: 0, padding: 8 },
+  title: { fontSize: 28, marginTop: 16, marginBottom: 8 },
+  subtitle: { fontSize: 16, textAlign: 'center' },
+  formContainer: { width: '100%', borderRadius: 20, padding: 20, borderWidth: 1 },
+  row: { flexDirection: 'row', justifyContent: 'space-between' },
+  input: { fontSize: 16, paddingVertical: 12, borderBottomWidth: 1, marginBottom: 20 },
+  halfWidth: { width: '48%' },
+  textArea: { height: 80, textAlignVertical: 'top' },
+  registerButton: { borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 10 },
+  registerButtonText: { fontSize: 16 },
+  loginLink: { alignItems: 'center', marginTop: 24 },
+  loginLinkText: { fontSize: 14 },
 });
 
 export default RegisterScreen;

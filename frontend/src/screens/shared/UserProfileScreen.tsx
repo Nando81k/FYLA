@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
 import { useBooking } from '@/context/BookingContext';
 import { contentService } from '@/services/contentService';
+import { socialService } from '@/services/socialService';
 import { UserProfile, Post } from '@/types/content';
 import PostComponent from '@/components/shared/PostComponent';
 import AdvancedBookingModal from '@/components/booking/AdvancedBookingModal';
@@ -85,15 +86,13 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({ route, navigation
 
     setIsFollowLoading(true);
     try {
-      const result = await contentService.toggleFollow(token, userId);
+      const result = await socialService.toggleFollow(token, userId);
       setIsFollowing(result.isFollowing);
       setProfile(prev => prev ? {
         ...prev,
         stats: {
           ...prev.stats,
-          followersCount: result.isFollowing 
-            ? prev.stats.followersCount + 1 
-            : prev.stats.followersCount - 1,
+          followersCount: result.followersCount,
         },
         isFollowing: result.isFollowing
       } : null);

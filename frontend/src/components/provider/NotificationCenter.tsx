@@ -13,16 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
-
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'booking' | 'cancellation' | 'review' | 'payment' | 'reminder';
-  timestamp: Date;
-  isRead: boolean;
-  data?: any;
-}
+import { NotificationData } from '@/types/notifications';
 
 interface NotificationCenterProps {
   visible: boolean;
@@ -37,16 +28,28 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ visible, onClos
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'booking':
+      case 'booking_request':
+      case 'booking_confirmed':
+      case 'booking_reminder':
         return 'calendar';
-      case 'cancellation':
+      case 'booking_cancelled':
         return 'close-circle';
-      case 'review':
+      case 'review_received':
         return 'star';
-      case 'payment':
+      case 'payment_received':
         return 'card';
-      case 'reminder':
-        return 'alarm';
+      case 'message_received':
+        return 'chatbubble';
+      case 'new_follower':
+        return 'person-add';
+      case 'post_liked':
+        return 'heart';
+      case 'post_commented':
+        return 'chatbubble-ellipses';
+      case 'promotion':
+        return 'pricetag';
+      case 'system_update':
+        return 'information-circle';
       default:
         return 'notifications';
     }
@@ -54,24 +57,42 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ visible, onClos
 
   const getNotificationColor = (type: string) => {
     switch (type) {
-      case 'booking':
+      case 'booking_request':
+      case 'booking_confirmed':
         return '#10b981';
-      case 'cancellation':
+      case 'booking_cancelled':
         return '#ef4444';
-      case 'review':
+      case 'booking_reminder':
         return '#f59e0b';
-      case 'payment':
+      case 'review_received':
+        return '#f59e0b';
+      case 'payment_received':
+        return '#10b981';
+      case 'message_received':
         return '#3b82f6';
-      case 'reminder':
+      case 'new_follower':
+      case 'post_liked':
+      case 'post_commented':
         return '#8b5cf6';
+      case 'promotion':
+        return '#f59e0b';
+      case 'system_update':
+        return '#6b7280';
       default:
         return '#6b7280';
     }
   };
 
-  const formatTimestamp = (timestamp: Date) => {
+  const formatTimestamp = (timestamp: Date | string | undefined) => {
+    if (!timestamp) return 'Unknown time';
+    
+    const dateObj = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    
+    // Check if the date is valid
+    if (isNaN(dateObj.getTime())) return 'Invalid date';
+    
     const now = new Date();
-    const diff = now.getTime() - timestamp.getTime();
+    const diff = now.getTime() - dateObj.getTime();
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
@@ -80,31 +101,31 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ visible, onClos
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     if (days < 7) return `${days}d ago`;
-    return timestamp.toLocaleDateString();
+    return dateObj.toLocaleDateString();
   };
 
-  const handleNotificationPress = (notification: Notification) => {
-    markAsRead(notification.id);
+  const handleNotificationPress = (notification: NotificationData) => {
+    markAsRead([notification.id]);
     
     // Handle different notification types
     switch (notification.type) {
-      case 'booking':
-        Alert.alert('New Booking', `You have a new booking: ${notification.message}`);
+      case 'booking_request':
+        Alert.alert('New Booking', `You have a new booking: ${notification.body}`);
         break;
-      case 'cancellation':
-        Alert.alert('Booking Cancelled', notification.message);
+      case 'booking_cancelled':
+        Alert.alert('Booking Cancelled', notification.body);
         break;
-      case 'review':
-        Alert.alert('New Review', notification.message);
+      case 'review_received':
+        Alert.alert('New Review', notification.body);
         break;
-      case 'payment':
-        Alert.alert('Payment Update', notification.message);
+      case 'payment_received':
+        Alert.alert('Payment Update', notification.body);
         break;
-      case 'reminder':
-        Alert.alert('Reminder', notification.message);
+      case 'booking_reminder':
+        Alert.alert('Reminder', notification.body);
         break;
       default:
-        Alert.alert(notification.title, notification.message);
+        Alert.alert(notification.title, notification.body);
     }
   };
 
@@ -121,7 +142,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ visible, onClos
     return true;
   });
 
-  const renderNotification = ({ item }: { item: Notification }) => (
+  const renderNotification = ({ item }: { item: NotificationData }) => (
     <TouchableOpacity
       style={[
         styles.notificationItem,
@@ -141,10 +162,10 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ visible, onClos
           {item.title}
         </Text>
         <Text style={styles.notificationMessage} numberOfLines={2}>
-          {item.message}
+          {item.body}
         </Text>
         <Text style={styles.notificationTime}>
-          {formatTimestamp(item.timestamp)}
+          {formatTimestamp(item.createdAt)}
         </Text>
       </View>
       {!item.isRead && <View style={styles.unreadDot} />}

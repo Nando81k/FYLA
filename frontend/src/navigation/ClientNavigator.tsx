@@ -2,12 +2,13 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/theme/ThemeProvider';
 import { ClientTabParamList, ClientFeedStackParamList, ClientSearchStackParamList, MessagesStackParamList, ProfileStackParamList } from '@/types';
-import FeedScreen from '@/screens/client/FeedScreen';
-import EnhancedSearchScreen from '@/screens/client/EnhancedSearchScreen';
+import FeedScreen from '@/screens/client/FeedScreenSimple';
+import SearchScreen from '@/screens/client/SearchScreen';
 import AIBookingScreen from '@/screens/client/AIBookingScreen';
 import ProviderDetailScreen from '@/screens/client/ProviderDetailScreen';
-import BookingsScreen from '@/screens/client/BookingsScreen';
+import ClientBookingHistory from '@/screens/client/ClientBookingHistory';
 import MessagesScreen from '@/screens/shared/MessagesScreen';
 import ChatScreen from '@/screens/shared/ChatScreen';
 import ProfileScreen from '@/screens/shared/ProfileScreen';
@@ -19,6 +20,7 @@ import SavedPostsScreen from '@/screens/shared/SavedPostsScreen';
 import NotificationCenterScreen from '@/screens/shared/NotificationCenterScreen';
 import NotificationPreferencesScreen from '@/screens/shared/NotificationPreferencesScreen';
 import CreatePostScreen from '@/screens/shared/CreatePostScreen';
+import CreateContentScreen from '@/screens/CreateContentScreen';
 
 const Tab = createBottomTabNavigator<ClientTabParamList>();
 const FeedStack = createStackNavigator<ClientFeedStackParamList>();
@@ -27,8 +29,24 @@ const MessagesStack = createStackNavigator<MessagesStackParamList>();
 const ProfileStack = createStackNavigator<ProfileStackParamList>();
 
 const FeedStackNavigator: React.FC = () => {
+  const { colors } = useTheme();
+  
   return (
-    <FeedStack.Navigator>
+    <FeedStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: colors.background.secondary,
+          borderBottomColor: colors.border.primary,
+        },
+        headerTintColor: colors.text.primary,
+        headerTitleStyle: {
+          color: colors.text.primary,
+        },
+        headerBackTitleStyle: {
+          color: colors.text.secondary,
+        },
+      }}
+    >
       <FeedStack.Screen 
         name="FeedHome" 
         component={FeedScreen}
@@ -89,6 +107,14 @@ const FeedStackNavigator: React.FC = () => {
         }}
       />
       <FeedStack.Screen 
+        name="CreateContent" 
+        component={CreateContentScreen}
+        options={{ 
+          headerShown: true,
+          title: 'Create Content',
+        }}
+      />
+      <FeedStack.Screen 
         name="AIBooking" 
         component={AIBookingScreen}
         options={{ 
@@ -108,11 +134,27 @@ const FeedStackNavigator: React.FC = () => {
 };
 
 const SearchStackNavigator: React.FC = () => {
+  const { colors } = useTheme();
+  
   return (
-    <SearchStack.Navigator>
+    <SearchStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: colors.background.secondary,
+          borderBottomColor: colors.border.primary,
+        },
+        headerTintColor: colors.text.primary,
+        headerTitleStyle: {
+          color: colors.text.primary,
+        },
+        headerBackTitleStyle: {
+          color: colors.text.secondary,
+        },
+      }}
+    >
       <SearchStack.Screen 
         name="SearchHome" 
-        component={EnhancedSearchScreen}
+        component={SearchScreen}
         options={{ headerShown: false }}
       />
       <SearchStack.Screen 
@@ -158,8 +200,24 @@ const SearchStackNavigator: React.FC = () => {
 };
 
 const MessagesStackNavigator: React.FC = () => {
+  const { colors } = useTheme();
+  
   return (
-    <MessagesStack.Navigator>
+    <MessagesStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: colors.background.secondary,
+          borderBottomColor: colors.border.primary,
+        },
+        headerTintColor: colors.text.primary,
+        headerTitleStyle: {
+          color: colors.text.primary,
+        },
+        headerBackTitleStyle: {
+          color: colors.text.secondary,
+        },
+      }}
+    >
       <MessagesStack.Screen 
         name="MessagesList" 
         component={MessagesScreen}
@@ -178,8 +236,24 @@ const MessagesStackNavigator: React.FC = () => {
 };
 
 const ProfileStackNavigator: React.FC = () => {
+  const { colors } = useTheme();
+  
   return (
-    <ProfileStack.Navigator>
+    <ProfileStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: colors.background.secondary,
+          borderBottomColor: colors.border.primary,
+        },
+        headerTintColor: colors.text.primary,
+        headerTitleStyle: {
+          color: colors.text.primary,
+        },
+        headerBackTitleStyle: {
+          color: colors.text.secondary,
+        },
+      }}
+    >
       <ProfileStack.Screen 
         name="ProfileHome" 
         component={ProfileScreen}
@@ -230,6 +304,8 @@ const ProfileStackNavigator: React.FC = () => {
 };
 
 const ClientNavigator: React.FC = () => {
+  const { colors } = useTheme();
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -258,14 +334,23 @@ const ClientNavigator: React.FC = () => {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#3b82f6',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.text.tertiary,
+        tabBarStyle: {
+          backgroundColor: colors.background.secondary,
+          borderTopColor: colors.border.primary,
+          borderTopWidth: 1,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+        },
         headerShown: false,
       })}
     >
       <Tab.Screen name="Feed" component={FeedStackNavigator} />
       <Tab.Screen name="Search" component={SearchStackNavigator} />
-      <Tab.Screen name="Bookings" component={BookingsScreen} />
+      <Tab.Screen name="Bookings" component={ClientBookingHistory} />
       <Tab.Screen name="Messages" component={MessagesStackNavigator} />
       <Tab.Screen name="Profile" component={ProfileStackNavigator} />
     </Tab.Navigator>

@@ -7,8 +7,8 @@ import {
   TimeSlotReservation,
   AvailabilityFilter,
   TimeSlotStats,
-} from '@/types/timeSlot';
-import { timeSlotService } from '@/services/timeSlotService';
+} from '../types/timeSlot';
+import { timeSlotService } from '../services/timeSlotService';
 
 // State interface
 interface TimeSlotState {

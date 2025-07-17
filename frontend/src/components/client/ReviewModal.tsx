@@ -63,8 +63,8 @@ const ReviewModal: React.FC<ReviewModalProps> = ({
           comment: comment.trim() || undefined,
         };
 
-        // Using mock service for now
-        review = await reviewService.createMockReview(reviewData);
+        // Use real API service
+        review = await reviewService.createReview(token, reviewData);
       }
 
       onSuccess(review);

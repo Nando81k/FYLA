@@ -16,16 +16,17 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useAuth } from '@/context/AuthContext';
-import { useBooking } from '@/context/BookingContext';
-import { useNotifications } from '@/context/NotificationContext';
+import { useAuth } from '../../context/AuthContext';
+import { useBooking } from '../../context/BookingContext';
+import { useNotifications } from '../../context/NotificationContext';
+import { useTheme } from '@/theme/ThemeProvider';
 import {
   Booking,
   BookingStatus,
   BookingFilter,
   BookingStats,
   WaitlistEntry,
-} from '@/types/booking';
+} from '../../types/booking';
 
 const { width } = Dimensions.get('window');
 
@@ -46,9 +47,471 @@ const BookingManagementScreen: React.FC = () => {
     clearError,
   } = useBooking();
   const { showNotification } = useNotifications();
+  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+
+  // Create styles with theme
+  const createStyles = (colors: any, typography: any, spacing: any, borderRadius: any, shadows: any) => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      marginTop: spacing.md,
+      fontSize: typography.sizes.md,
+      color: colors.textSecondary,
+    },
+    header: {
+      backgroundColor: colors.card,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    headerTitle: {
+      fontSize: typography.sizes.xl,
+      fontWeight: typography.weights.bold,
+      color: colors.text,
+      marginBottom: spacing.md,
+    },
+    tabContainer: {
+      flexDirection: 'row',
+      backgroundColor: colors.surface,
+      borderRadius: borderRadius.lg,
+      padding: spacing.xs,
+      marginBottom: spacing.md,
+    },
+    tab: {
+      flex: 1,
+      paddingVertical: spacing.sm,
+      alignItems: 'center',
+      borderRadius: borderRadius.md,
+    },
+    activeTab: {
+      backgroundColor: colors.primary,
+      ...shadows.sm,
+    },
+    tabText: {
+      fontSize: typography.sizes.sm,
+      fontWeight: typography.weights.medium,
+      color: colors.textSecondary,
+    },
+    activeTabText: {
+      color: colors.textInverse,
+      fontWeight: typography.weights.semibold,
+    },
+    searchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      marginBottom: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: typography.sizes.md,
+      color: colors.text,
+      marginLeft: spacing.sm,
+    },
+    filterButton: {
+      padding: spacing.sm,
+      borderRadius: borderRadius.md,
+      backgroundColor: colors.surface,
+      marginLeft: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    statsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: spacing.lg,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: colors.card,
+      borderRadius: borderRadius.md,
+      padding: spacing.md,
+      marginHorizontal: spacing.xs,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...shadows.sm,
+    },
+    statValue: {
+      fontSize: typography.sizes.lg,
+      fontWeight: typography.weights.bold,
+      color: colors.text,
+      marginBottom: spacing.xs,
+    },
+    statLabel: {
+      fontSize: typography.sizes.sm,
+      color: colors.textSecondary,
+    },
+    bookingCard: {
+      backgroundColor: colors.card,
+      borderRadius: borderRadius.lg,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...shadows.md,
+    },
+    bookingHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+    },
+    bookingClient: {
+      fontSize: typography.sizes.md,
+      fontWeight: typography.weights.semibold,
+      color: colors.text,
+    },
+    bookingStatus: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.sm,
+      fontSize: typography.sizes.xs,
+      fontWeight: typography.weights.medium,
+      color: colors.textInverse,
+    },
+    bookingDetails: {
+      marginBottom: spacing.sm,
+    },
+    bookingService: {
+      fontSize: typography.sizes.sm,
+      color: colors.textSecondary,
+      marginBottom: spacing.xs,
+    },
+    bookingDateTime: {
+      fontSize: typography.sizes.sm,
+      color: colors.textSecondary,
+      marginBottom: spacing.xs,
+    },
+    bookingPrice: {
+      fontSize: typography.sizes.sm,
+      fontWeight: typography.weights.medium,
+      color: colors.primary,
+    },
+    bookingActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: spacing.sm,
+    },
+    actionButton: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    actionButtonText: {
+      fontSize: typography.sizes.sm,
+      fontWeight: typography.weights.medium,
+      color: colors.text,
+    },
+    primaryActionButton: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    primaryActionButtonText: {
+      color: colors.textInverse,
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: spacing.xl,
+    },
+    emptyText: {
+      fontSize: typography.sizes.md,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginTop: spacing.md,
+    },
+    modalContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+      backgroundColor: colors.card,
+      borderRadius: borderRadius.lg,
+      padding: spacing.lg,
+      width: '90%',
+      maxHeight: '80%',
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.lg,
+    },
+    modalTitle: {
+      fontSize: typography.sizes.lg,
+      fontWeight: typography.weights.bold,
+      color: colors.text,
+    },
+    closeButton: {
+      padding: spacing.sm,
+    },
+    errorBanner: {
+      backgroundColor: colors.error,
+      padding: spacing.md,
+      borderRadius: borderRadius.md,
+      marginBottom: spacing.md,
+    },
+    errorText: {
+      color: colors.textInverse,
+      fontSize: typography.sizes.sm,
+      fontWeight: typography.weights.medium,
+    },
+    // Additional missing styles
+    content: {
+      flex: 1,
+      padding: spacing.md,
+    },
+    todayBookingCard: {
+      borderLeftWidth: 4,
+      borderLeftColor: colors.primary,
+    },
+    dateTimeSection: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+    },
+    dateTimeContainer: {
+      flex: 1,
+    },
+    dateText: {
+      fontSize: typography.sizes.md,
+      fontWeight: typography.weights.semibold,
+      color: colors.text,
+    },
+    todayText: {
+      color: colors.primary,
+    },
+    timeText: {
+      fontSize: typography.sizes.sm,
+      color: colors.textSecondary,
+    },
+    todayTimeText: {
+      color: colors.primary,
+    },
+    statusBadge: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.sm,
+      alignSelf: 'flex-start',
+    },
+    statusText: {
+      fontSize: typography.sizes.xs,
+      fontWeight: typography.weights.medium,
+      color: colors.white,
+    },
+    clientInfoSection: {
+      marginBottom: spacing.sm,
+    },
+    clientDetails: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: spacing.xs,
+    },
+    clientName: {
+      fontSize: typography.sizes.md,
+      fontWeight: typography.weights.semibold,
+      color: colors.text,
+      marginLeft: spacing.sm,
+    },
+    durationText: {
+      fontSize: typography.sizes.sm,
+      color: colors.textSecondary,
+    },
+    servicesList: {
+      marginBottom: spacing.sm,
+    },
+    serviceItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: spacing.xs,
+    },
+    serviceName: {
+      fontSize: typography.sizes.sm,
+      color: colors.text,
+    },
+    servicePrice: {
+      fontSize: typography.sizes.sm,
+      fontWeight: typography.weights.medium,
+      color: colors.primary,
+    },
+    bookingFooter: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: spacing.sm,
+    },
+    totalAmount: {
+      fontSize: typography.sizes.md,
+      fontWeight: typography.weights.bold,
+      color: colors.text,
+    },
+    actionButtons: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    notesContainer: {
+      marginTop: spacing.sm,
+      padding: spacing.sm,
+      backgroundColor: colors.surface,
+      borderRadius: borderRadius.sm,
+    },
+    notesLabel: {
+      fontSize: typography.sizes.sm,
+      fontWeight: typography.weights.medium,
+      color: colors.text,
+      marginBottom: spacing.xs,
+    },
+    notesText: {
+      fontSize: typography.sizes.sm,
+      color: colors.textSecondary,
+    },
+    waitlistCard: {
+      backgroundColor: colors.card,
+      padding: spacing.md,
+      borderRadius: borderRadius.md,
+      marginBottom: spacing.md,
+      ...shadows.sm,
+    },
+    waitlistHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+    },
+    waitlistClient: {
+      fontSize: typography.sizes.md,
+      fontWeight: typography.weights.semibold,
+      color: colors.text,
+    },
+    waitlistDate: {
+      fontSize: typography.sizes.sm,
+      color: colors.textSecondary,
+    },
+    waitlistServices: {
+      marginBottom: spacing.sm,
+    },
+    waitlistServicesLabel: {
+      fontSize: typography.sizes.sm,
+      fontWeight: typography.weights.medium,
+      color: colors.text,
+      marginBottom: spacing.xs,
+    },
+    waitlistServicesText: {
+      fontSize: typography.sizes.sm,
+      color: colors.textSecondary,
+    },
+    waitlistPreference: {
+      fontSize: typography.sizes.sm,
+      color: colors.textSecondary,
+      marginBottom: spacing.xs,
+    },
+    waitlistActions: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    waitlistActionButton: {
+      flex: 1,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.sm,
+      alignItems: 'center',
+    },
+    waitlistContactButton: {
+      backgroundColor: colors.primary,
+    },
+    waitlistContactText: {
+      color: colors.white,
+      fontSize: typography.sizes.sm,
+      fontWeight: typography.weights.medium,
+    },
+    waitlistRemoveButton: {
+      backgroundColor: colors.error,
+    },
+    waitlistRemoveText: {
+      color: colors.white,
+      fontSize: typography.sizes.sm,
+      fontWeight: typography.weights.medium,
+    },
+    tabButton: {
+      flex: 1,
+      paddingVertical: spacing.sm,
+      alignItems: 'center',
+      borderRadius: borderRadius.sm,
+    },
+    tabButtonActive: {
+      backgroundColor: colors.primary,
+    },
+    tabButtonText: {
+      fontSize: typography.sizes.sm,
+      color: colors.textSecondary,
+    },
+    tabButtonTextActive: {
+      color: colors.white,
+    },
+    tabBadge: {
+      backgroundColor: colors.accent,
+      borderRadius: borderRadius.sm,
+      paddingHorizontal: spacing.xs,
+      paddingVertical: 2,
+      marginLeft: spacing.xs,
+    },
+    tabBadgeText: {
+      color: colors.white,
+      fontSize: typography.sizes.xs,
+      fontWeight: typography.weights.medium,
+    },
+    emptyState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: spacing.xl,
+    },
+    emptyStateTitle: {
+      fontSize: typography.sizes.lg,
+      fontWeight: typography.weights.bold,
+      color: colors.text,
+      marginBottom: spacing.sm,
+    },
+    emptyStateMessage: {
+      fontSize: typography.sizes.md,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    searchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      marginBottom: spacing.md,
+    },
+  });
+
+  const styles = createStyles(colors, typography, spacing, borderRadius, shadows);
 
   // State
   const [selectedTab, setSelectedTab] = useState<'today' | 'upcoming' | 'past' | 'waitlist'>('today');
+  const [activeTab, setActiveTab] = useState<'active' | 'upcoming' | 'completed' | 'cancelled' | 'waitlist'>('active');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
@@ -61,6 +524,22 @@ const BookingManagementScreen: React.FC = () => {
     from: new Date().toISOString().split('T')[0],
     to: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
   });
+
+  // Helper functions
+  const getFilteredData = () => {
+    let data = activeTab === 'waitlist' ? waitlistEntries : bookings;
+    
+    if (searchQuery) {
+      data = data.filter((item: any) => 
+        item.client?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.services?.some((service: any) => 
+          service.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      );
+    }
+    
+    return data || [];
+  };
 
   // Load data on focus
   useFocusEffect(
@@ -262,57 +741,97 @@ const BookingManagementScreen: React.FC = () => {
     );
   };
 
-  const renderBookingCard = ({ item: booking }: { item: Booking }) => (
-    <TouchableOpacity
-      style={styles.bookingCard}
-      onPress={() => {
-        setSelectedBooking(booking);
-        setShowBookingDetails(true);
-      }}
-    >
-      <View style={styles.bookingHeader}>
-        <View style={styles.clientInfo}>
-          <Text style={styles.clientName}>{booking.client.fullName}</Text>
-          <Text style={styles.bookingTime}>
-            {new Date(booking.scheduledDateTime).toLocaleString()}
-          </Text>
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(booking.status) }]}>
-          <Text style={styles.statusText}>{booking.status}</Text>
-        </View>
-      </View>
+  const renderBookingCard = ({ item: booking }: { item: Booking }) => {
+    const appointmentDate = new Date(booking.scheduledDateTime);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    
+    const isToday = appointmentDate.toDateString() === today.toDateString();
+    const isTomorrow = appointmentDate.toDateString() === tomorrow.toDateString();
+    
+    let dateDisplay = '';
+    if (isToday) {
+      dateDisplay = 'Today';
+    } else if (isTomorrow) {
+      dateDisplay = 'Tomorrow';
+    } else {
+      dateDisplay = appointmentDate.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    }
+    
+    const timeDisplay = appointmentDate.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
 
-      <View style={styles.servicesList}>
-        {booking.services.map((service, index) => (
-          <Text key={index} style={styles.serviceName}>
-            • {service.name} (${service.price})
-          </Text>
-        ))}
-      </View>
+    return (
+      <TouchableOpacity
+        style={[styles.bookingCard, isToday && styles.todayBookingCard]}
+        onPress={() => {
+          setSelectedBooking(booking);
+          setShowBookingDetails(true);
+        }}
+      >
+        {/* Prominent Date & Time Section */}
+        <View style={styles.dateTimeSection}>
+          <View style={styles.dateTimeContainer}>
+            <Text style={[styles.dateText, isToday && styles.todayText]}>{dateDisplay}</Text>
+            <Text style={[styles.timeText, isToday && styles.todayTimeText]}>{timeDisplay}</Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(booking.status) }]}>
+            <Text style={styles.statusText}>{booking.status}</Text>
+          </View>
+        </View>
 
-      <View style={styles.bookingFooter}>
-        <Text style={styles.totalAmount}>${booking.totalAmount.toFixed(2)}</Text>
-        <View style={styles.actionButtons}>
-          {getStatusActions(booking).map((action, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[styles.actionButton, { backgroundColor: action.color }]}
-              onPress={() => handleStatusUpdate(booking, action.status)}
-            >
-              <Text style={styles.actionButtonText}>{action.title}</Text>
-            </TouchableOpacity>
+        {/* Client Info */}
+        <View style={styles.clientInfoSection}>
+          <View style={styles.clientDetails}>
+            <Ionicons name="person" size={16} color="#6b7280" />
+            <Text style={styles.clientName}>{booking.client.fullName}</Text>
+          </View>
+          <Text style={styles.durationText}>{booking.duration} min</Text>
+        </View>
+
+        {/* Services */}
+        <View style={styles.servicesList}>
+          {booking.services.map((service, index) => (
+            <View key={index} style={styles.serviceItem}>
+              <Text style={styles.serviceName}>{service.name}</Text>
+              <Text style={styles.servicePrice}>${service.price}</Text>
+            </View>
           ))}
         </View>
-      </View>
 
-      {booking.notes && (
-        <View style={styles.notesContainer}>
-          <Text style={styles.notesLabel}>Notes:</Text>
-          <Text style={styles.notesText}>{booking.notes}</Text>
+        {/* Footer with Total and Actions */}
+        <View style={styles.bookingFooter}>
+          <Text style={styles.totalAmount}>Total: ${booking.totalAmount.toFixed(2)}</Text>
+          <View style={styles.actionButtons}>
+            {getStatusActions(booking).map((action, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[styles.actionButton, { backgroundColor: action.color }]}
+                onPress={() => handleStatusUpdate(booking, action.status)}
+              >
+                <Text style={styles.actionButtonText}>{action.title}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
-      )}
-    </TouchableOpacity>
-  );
+
+        {booking.notes && (
+          <View style={styles.notesContainer}>
+            <Text style={styles.notesLabel}>Notes:</Text>
+            <Text style={styles.notesText}>{booking.notes}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   const renderWaitlistCard = ({ item: entry }: { item: WaitlistEntry }) => (
     <View style={styles.waitlistCard}>
@@ -434,554 +953,57 @@ const BookingManagementScreen: React.FC = () => {
         </View>
       </View>
 
-      <View style={styles.tabsContainer}>
-        {renderTabButton('today', 'Today', bookingStats?.confirmedBookings)}
-        {renderTabButton('upcoming', 'Upcoming')}
-        {renderTabButton('past', 'Past')}
-        {renderTabButton('waitlist', 'Waitlist', waitlistEntries.length)}
-      </View>
-
-      <FlatList
-        data={selectedTab === 'waitlist' ? waitlistEntries : filteredBookings}
-        renderItem={selectedTab === 'waitlist' ? renderWaitlistCard : renderBookingCard}
-        keyExtractor={(item) => item.id}
-        style={styles.list}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-        ListEmptyComponent={
-          loading.bookings ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#007AFF" />
-            </View>
-          ) : (
-            renderEmptyState()
-          )
-        }
-      />
-
-      {/* Booking Details Modal */}
-      <Modal
-        visible={showBookingDetails}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowBookingDetails(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowBookingDetails(false)}>
-              <Text style={styles.modalClose}>Close</Text>
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>Booking Details</Text>
-            <View style={styles.modalPlaceholder} />
-          </View>
-
-          {selectedBooking && (
-            <ScrollView style={styles.modalContent}>
-              <View style={styles.detailSection}>
-                <Text style={styles.detailSectionTitle}>Client Information</Text>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Name:</Text>
-                  <Text style={styles.detailValue}>{selectedBooking.client.fullName}</Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Email:</Text>
-                  <Text style={styles.detailValue}>{selectedBooking.client.email}</Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Phone:</Text>
-                  <Text style={styles.detailValue}>{selectedBooking.client.phone}</Text>
-                </View>
-              </View>
-
-              <View style={styles.detailSection}>
-                <Text style={styles.detailSectionTitle}>Appointment Details</Text>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Date & Time:</Text>
-                  <Text style={styles.detailValue}>
-                    {new Date(selectedBooking.scheduledDateTime).toLocaleString()}
-                  </Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Duration:</Text>
-                  <Text style={styles.detailValue}>{selectedBooking.duration} minutes</Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Status:</Text>
-                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(selectedBooking.status) }]}>
-                    <Text style={styles.statusText}>{selectedBooking.status}</Text>
-                  </View>
-                </View>
-              </View>
-
-              <View style={styles.detailSection}>
-                <Text style={styles.detailSectionTitle}>Services</Text>
-                {selectedBooking.services.map((service, index) => (
-                  <View key={index} style={styles.serviceDetailRow}>
-                    <Text style={styles.serviceDetailName}>{service.name}</Text>
-                    <Text style={styles.serviceDetailPrice}>${service.price}</Text>
-                  </View>
-                ))}
-                <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Total:</Text>
-                  <Text style={styles.totalValue}>${selectedBooking.totalAmount.toFixed(2)}</Text>
-                </View>
-              </View>
-
-              {selectedBooking.notes && (
-                <View style={styles.detailSection}>
-                  <Text style={styles.detailSectionTitle}>Notes</Text>
-                  <Text style={styles.notesDetailText}>{selectedBooking.notes}</Text>
-                </View>
-              )}
-
-              {selectedBooking.specialRequests && (
-                <View style={styles.detailSection}>
-                  <Text style={styles.detailSectionTitle}>Special Requests</Text>
-                  <Text style={styles.notesDetailText}>{selectedBooking.specialRequests}</Text>
-                </View>
-              )}
-
-              <View style={styles.actionSection}>
-                {getStatusActions(selectedBooking).map((action, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[styles.modalActionButton, { backgroundColor: action.color }]}
-                    onPress={() => {
-                      handleStatusUpdate(selectedBooking, action.status);
-                      setShowBookingDetails(false);
-                    }}
-                  >
-                    <Text style={styles.modalActionButtonText}>{action.title}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-          )}
-        </View>
-      </Modal>
-
-      {error && (
-        <View style={styles.errorBanner}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={clearError}>
-            <Ionicons name="close" size={16} color="#FFF" />
-          </TouchableOpacity>
-        </View>
-      )}
+      {renderTabs()}
+      {renderContent()}
     </SafeAreaView>
   );
-};
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F2F2F7',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#333',
-  },
-  filterButton: {
-    padding: 8,
-  },
-  statsContainer: {
-    backgroundColor: '#FFF',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-  },
-  statCard: {
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    minWidth: 100,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#333',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#8E8E93',
-    marginTop: 4,
-  },
-  searchContainer: {
-    backgroundColor: '#FFF',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F2F2F7',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 8,
-    fontSize: 16,
-    color: '#333',
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-  },
-  tabButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-  },
-  tabButtonActive: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#007AFF',
-  },
-  tabButtonText: {
-    fontSize: 16,
-    color: '#8E8E93',
-  },
-  tabButtonTextActive: {
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  tabBadge: {
-    backgroundColor: '#FF3B30',
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginLeft: 4,
-  },
-  tabBadgeText: {
-    fontSize: 10,
-    color: '#FFF',
-    fontWeight: '600',
-  },
-  list: {
-    flex: 1,
-    padding: 16,
-  },
-  bookingCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  bookingHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  clientInfo: {
-    flex: 1,
-  },
-  clientName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-  },
-  bookingTime: {
-    fontSize: 14,
-    color: '#8E8E93',
-    marginTop: 4,
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    fontSize: 12,
-    color: '#FFF',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-  servicesList: {
-    marginBottom: 12,
-  },
-  serviceName: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 2,
-  },
-  bookingFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  totalAmount: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#007AFF',
-  },
-  actionButtons: {
-    flexDirection: 'row',
-  },
-  actionButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    marginLeft: 8,
-  },
-  actionButtonText: {
-    fontSize: 12,
-    color: '#FFF',
-    fontWeight: '600',
-  },
-  notesContainer: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-  },
-  notesLabel: {
-    fontSize: 12,
-    color: '#8E8E93',
-    fontWeight: '600',
-  },
-  notesText: {
-    fontSize: 14,
-    color: '#333',
-    marginTop: 4,
-  },
-  waitlistCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FF9500',
-  },
-  waitlistHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  waitlistClient: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  waitlistDate: {
-    fontSize: 12,
-    color: '#8E8E93',
-  },
-  waitlistServices: {
-    marginBottom: 8,
-  },
-  waitlistServicesLabel: {
-    fontSize: 12,
-    color: '#8E8E93',
-    fontWeight: '600',
-  },
-  waitlistServicesText: {
-    fontSize: 14,
-    color: '#333',
-    marginTop: 2,
-  },
-  waitlistPreference: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
-  },
-  waitlistActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 8,
-  },
-  waitlistActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    marginLeft: 8,
-  },
-  waitlistContactButton: {
-    backgroundColor: '#F0F8FF',
-    borderWidth: 1,
-    borderColor: '#007AFF',
-  },
-  waitlistContactText: {
-    fontSize: 12,
-    color: '#007AFF',
-    marginLeft: 4,
-    fontWeight: '600',
-  },
-  waitlistRemoveButton: {
-    backgroundColor: '#FFF3F3',
-    borderWidth: 1,
-    borderColor: '#FF3B30',
-  },
-  waitlistRemoveText: {
-    fontSize: 12,
-    color: '#FF3B30',
-    marginLeft: 4,
-    fontWeight: '600',
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#8E8E93',
-    marginTop: 16,
-  },
-  emptyStateMessage: {
-    fontSize: 16,
-    color: '#C7C7CC',
-    textAlign: 'center',
-    marginTop: 8,
-    paddingHorizontal: 32,
-  },
-  loadingContainer: {
-    paddingVertical: 60,
-    alignItems: 'center',
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#FFF',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-    paddingTop: 50,
-  },
-  modalClose: {
-    fontSize: 16,
-    color: '#007AFF',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-  },
-  modalPlaceholder: {
-    width: 50,
-  },
-  modalContent: {
-    flex: 1,
-    padding: 16,
-  },
-  detailSection: {
-    marginBottom: 24,
-  },
-  detailSectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: '#8E8E93',
-    flex: 1,
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#333',
-    flex: 2,
-    textAlign: 'right',
-  },
-  serviceDetailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  serviceDetailName: {
-    fontSize: 14,
-    color: '#333',
-  },
-  serviceDetailPrice: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
-    marginTop: 8,
-  },
-  totalLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  totalValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#007AFF',
-  },
-  notesDetailText: {
-    fontSize: 14,
-    color: '#333',
-    lineHeight: 20,
-  },
-  actionSection: {
-    marginTop: 24,
-  },
-  modalActionButton: {
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  modalActionButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
-  },
-  errorBanner: {
-    backgroundColor: '#D32F2F',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-  },
-  errorText: {
-    color: '#FFF',
-    fontSize: 14,
-    flex: 1,
-  },
-});
+  const renderTabs = () => (
+    <View style={styles.tabContainer}>
+      {['active', 'upcoming', 'completed', 'cancelled', 'waitlist'].map((tab) => (
+        <TouchableOpacity
+          key={tab}
+          style={[styles.tab, activeTab === tab && styles.activeTab]}
+          onPress={() => setActiveTab(tab)}
+        >
+          <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  const renderContent = () => {
+    const filteredData = getFilteredData();
+    
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading bookings...</Text>
+        </View>
+      );
+    }
+
+    if (filteredData.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No bookings found</Text>
+        </View>
+      );
+    }
+
+    return (
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {filteredData.map((item) => (
+          activeTab === 'waitlist' 
+            ? renderWaitlistItem(item) 
+            : renderBookingItem(item)
+        ))}
+      </ScrollView>
+    );
+  };
+};
 
 export default BookingManagementScreen;

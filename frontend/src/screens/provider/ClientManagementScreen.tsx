@@ -14,18 +14,174 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/theme/ThemeProvider';
 import { analyticsService } from '@/services/analyticsService';
 import { ClientInsight } from '@/types/analytics';
 import { FEATURE_FLAGS } from '@/config/api';
 
 const ClientManagementScreen: React.FC = () => {
   const { token } = useAuth();
+  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+  
   const [clients, setClients] = useState<ClientInsight[]>([]);
   const [filteredClients, setFilteredClients] = useState<ClientInsight[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'active' | 'inactive' | 'new'>('all');
+
+  // Create styles with theme
+  const createStyles = (colors: any, typography: any, spacing: any, borderRadius: any, shadows: any) => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      marginTop: spacing.md,
+      fontSize: typography.size.md,
+      color: colors.text.primaryecondary,
+      fontWeight: typography.weight.medium,
+    },
+    listContainer: {
+      padding: spacing.md,
+    },
+    header: {
+      marginBottom: spacing.lg,
+    },
+    searchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: borderRadius.lg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      marginBottom: spacing.md,
+      ...shadows.sm,
+    },
+    searchInput: {
+      flex: 1,
+      marginLeft: spacing.sm,
+      fontSize: typography.size.md,
+      color: colors.text.primary
+    },
+    filterContainer: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+      marginBottom: spacing.md,
+    },
+    filterButton: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.xl,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    filterButtonActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    filterButtonText: {
+      fontSize: typography.size.sm,
+      fontWeight: typography.weight.medium,
+      color: colors.text.primaryecondary,
+    },
+    filterButtonTextActive: {
+      color: colors.text.primarynverse,
+    },
+    summaryContainer: {
+      marginBottom: spacing.xs,
+    },
+    summaryText: {
+      fontSize: typography.size.sm,
+      color: colors.text.primaryecondary,
+      fontWeight: typography.weight.medium,
+    },
+    clientCard: {
+      backgroundColor: colors.card,
+      borderRadius: borderRadius.lg,
+      padding: spacing.md,
+      marginBottom: spacing.sm,
+      ...shadows.md,
+    },
+    clientHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: spacing.md,
+    },
+    clientAvatar: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      marginRight: spacing.sm,
+    },
+    clientInfo: {
+      flex: 1,
+    },
+    clientName: {
+      fontSize: typography.size.md,
+      fontWeight: typography.weight.semibold,
+      color: colors.text.primary,
+      marginBottom: spacing.xs,
+    },
+    statusContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    statusIndicator: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginRight: spacing.xs,
+    },
+    statusText: {
+      fontSize: typography.size.sm,
+      color: colors.text.primaryecondary,
+    },
+    clientActions: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+    },
+    actionButton: {
+      padding: spacing.xs,
+      borderRadius: borderRadius.md,
+      backgroundColor: colors.surface,
+    },
+    clientStats: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: spacing.sm,
+    },
+    statItem: {
+      alignItems: 'center',
+    },
+    statValue: {
+      fontSize: typography.size.md,
+      fontWeight: typography.weight.semibold,
+      color: colors.text.primary,
+      marginBottom: spacing.xs,
+    },
+    statLabel: {
+      fontSize: typography.size.xs,
+      color: colors.text.secondary,
+    },
+    clientFooter: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: spacing.sm,
+    },
+    lastAppointment: {
+      fontSize: typography.size.sm,
+      color: colors.text.primaryecondary,
+    },
+  });
+
+  const styles = createStyles(colors, typography, spacing, borderRadius, shadows);
 
   useEffect(() => {
     loadClients();
@@ -247,163 +403,5 @@ const ClientManagementScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  listContainer: {
-    padding: 16,
-  },
-  header: {
-    marginBottom: 20,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
-    color: '#1f2937',
-  },
-  filterContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
-  filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  filterButtonActive: {
-    backgroundColor: '#3b82f6',
-    borderColor: '#3b82f6',
-  },
-  filterButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6b7280',
-  },
-  filterButtonTextActive: {
-    color: 'white',
-  },
-  summaryContainer: {
-    marginBottom: 8,
-  },
-  summaryText: {
-    fontSize: 14,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  clientCard: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  clientHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  clientAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
-  },
-  clientInfo: {
-    flex: 1,
-  },
-  clientName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statusIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  statusText: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  clientActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: '#f9fafb',
-  },
-  clientStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 2,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6b7280',
-  },
-  clientFooter: {
-    borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
-    paddingTop: 12,
-  },
-  lastAppointment: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-});
 
 export default ClientManagementScreen;

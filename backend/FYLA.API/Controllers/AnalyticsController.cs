@@ -182,42 +182,42 @@ public class AnalyticsController : ControllerBase
     try
     {
       var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-      if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+      if (userIdClaim == null)
       {
-        return Unauthorized(new { message = "Invalid user token" });
+        return Unauthorized(new { message = "User not authenticated" });
       }
 
-      var today = DateTime.UtcNow.Date;
-      var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
-      var endOfWeek = startOfWeek.AddDays(7);
+      if (!int.TryParse(userIdClaim.Value, out int userId))
+      {
+        return BadRequest(new { message = "Invalid user ID" });
+      }
 
-      // Get appointments for different time periods
-      var todayAppointments = await _context.Appointments
-          .CountAsync(a => a.ProviderId == userId && a.ScheduledStartTime.Date == today);
+      var now = DateTime.UtcNow;
+      var todayStart = now.Date;
+      var weekStart = now.Date.AddDays(-(int)now.DayOfWeek);
 
-      var thisWeekAppointments = await _context.Appointments
-          .CountAsync(a => a.ProviderId == userId && a.ScheduledStartTime.Date >= startOfWeek && a.ScheduledStartTime.Date < endOfWeek);
-
-      var upcomingAppointments = await _context.Appointments
-          .Where(a => a.ProviderId == userId && a.ScheduledStartTime > DateTime.UtcNow && a.Status == AppointmentStatus.Confirmed)
+      // Get all appointments for the provider
+      var allAppointments = await _context.Appointments
+          .Where(a => a.ProviderId == userId)
           .ToListAsync();
 
-      var upcomingRevenue = upcomingAppointments.Sum(a => a.TotalPrice ?? 0);
+      // Calculate metrics
+      var totalToday = allAppointments.Count(a => a.ScheduledStartTime.Date == todayStart);
+      var totalThisWeek = allAppointments.Count(a => a.ScheduledStartTime.Date >= weekStart);
+      var totalUpcoming = allAppointments.Count(a => a.ScheduledStartTime > now && a.Status != AppointmentStatus.Cancelled);
+      var upcomingRevenue = allAppointments
+          .Where(a => a.ScheduledStartTime > now && a.Status != AppointmentStatus.Cancelled)
+          .Sum(a => a.TotalPrice ?? 0);
 
-      // Calculate cancellation rate
-      var totalPastAppointments = await _context.Appointments
-          .CountAsync(a => a.ProviderId == userId && a.ScheduledStartTime < DateTime.UtcNow);
-
-      var cancelledAppointments = await _context.Appointments
-          .CountAsync(a => a.ProviderId == userId && a.Status == AppointmentStatus.Cancelled);
-
-      var cancellationRate = totalPastAppointments > 0 ? (double)cancelledAppointments / totalPastAppointments * 100 : 0;
+      var totalAppointments = allAppointments.Count;
+      var cancelledCount = allAppointments.Count(a => a.Status == AppointmentStatus.Cancelled);
+      var cancellationRate = totalAppointments > 0 ? (double)cancelledCount / totalAppointments * 100 : 0;
 
       var metrics = new AppointmentMetricsDto
       {
-        TotalToday = todayAppointments,
-        TotalThisWeek = thisWeekAppointments,
-        TotalUpcoming = upcomingAppointments.Count,
+        TotalToday = totalToday,
+        TotalThisWeek = totalThisWeek,
+        TotalUpcoming = totalUpcoming,
         UpcomingRevenue = upcomingRevenue,
         CancellationRate = cancellationRate
       };

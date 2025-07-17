@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\FYLA.Application\FYLA.Application.csproj" />
     <ProjectReference Include="..\FYLA.Infrastructure\FYLA.Infrastructure.csproj" />
+    <ProjectReference Include="..\FYLA.Core\FYLA.Core.csproj" />
   </ItemGroup>
 
 </Project>

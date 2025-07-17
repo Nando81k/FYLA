@@ -17,6 +17,21 @@ namespace FYLA.API.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
 
+            modelBuilder.Entity("ContentPostService", b =>
+                {
+                    b.Property<int>("ContentPostId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ServiceId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("ContentPostId", "ServiceId");
+
+                    b.HasIndex("ServiceId");
+
+                    b.ToTable("ContentPostService");
+                });
+
             modelBuilder.Entity("FYLA.Core.Entities.Appointment", b =>
                 {
                     b.Property<int>("Id")
@@ -84,6 +99,111 @@ namespace FYLA.API.Migrations
                     b.ToTable("AppointmentServices");
                 });
 
+            modelBuilder.Entity("FYLA.Core.Entities.AvailabilityRule", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DayOfWeek")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EndTime")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ProviderId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("StartTime")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Timezone")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExternalId")
+                        .IsUnique();
+
+                    b.HasIndex("ProviderId");
+
+                    b.ToTable("AvailabilityRules");
+                });
+
+            modelBuilder.Entity("FYLA.Core.Entities.BreakInterval", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AvailabilityRuleId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EndTime")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsRecurring")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StartTime")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AvailabilityRuleId");
+
+                    b.HasIndex("ExternalId")
+                        .IsUnique();
+
+                    b.ToTable("BreakIntervals");
+                });
+
             modelBuilder.Entity("FYLA.Core.Entities.BusinessAnalyticsSnapshot", b =>
                 {
                     b.Property<int>("Id")
@@ -115,6 +235,118 @@ namespace FYLA.API.Migrations
                     b.HasIndex("ProviderId");
 
                     b.ToTable("BusinessAnalyticsSnapshots");
+                });
+
+            modelBuilder.Entity("FYLA.Core.Entities.ContentComment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ContentPostId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentPostId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ContentComments");
+                });
+
+            modelBuilder.Entity("FYLA.Core.Entities.ContentLike", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ContentPostId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ContentPostId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("ContentLikes");
+                });
+
+            modelBuilder.Entity("FYLA.Core.Entities.ContentPost", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("DiscountAmount")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("DiscountPercentage")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsFeatured")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("PromotionEndDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("PromotionStartDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PromotionTitle")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ProviderId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProviderId");
+
+                    b.ToTable("ContentPosts");
                 });
 
             modelBuilder.Entity("FYLA.Core.Entities.Conversation", b =>
@@ -284,6 +516,12 @@ namespace FYLA.API.Migrations
                     b.Property<int>("Rating")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("WouldRecommend")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AppointmentId")
@@ -377,6 +615,43 @@ namespace FYLA.API.Migrations
                     b.ToTable("Stories");
                 });
 
+            modelBuilder.Entity("FYLA.Core.Entities.TemporaryReservation", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Duration")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ProviderId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("RequestedStartTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ServiceId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("ProviderId");
+
+                    b.HasIndex("ServiceId");
+
+                    b.ToTable("TemporaryReservations");
+                });
+
             modelBuilder.Entity("FYLA.Core.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -454,6 +729,21 @@ namespace FYLA.API.Migrations
                     b.ToTable("UserServiceProviderTags");
                 });
 
+            modelBuilder.Entity("ContentPostService", b =>
+                {
+                    b.HasOne("FYLA.Core.Entities.ContentPost", null)
+                        .WithMany()
+                        .HasForeignKey("ContentPostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FYLA.Core.Entities.Service", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("FYLA.Core.Entities.Appointment", b =>
                 {
                     b.HasOne("FYLA.Core.Entities.User", "Client")
@@ -492,6 +782,28 @@ namespace FYLA.API.Migrations
                     b.Navigation("Service");
                 });
 
+            modelBuilder.Entity("FYLA.Core.Entities.AvailabilityRule", b =>
+                {
+                    b.HasOne("FYLA.Core.Entities.User", "Provider")
+                        .WithMany()
+                        .HasForeignKey("ProviderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Provider");
+                });
+
+            modelBuilder.Entity("FYLA.Core.Entities.BreakInterval", b =>
+                {
+                    b.HasOne("FYLA.Core.Entities.AvailabilityRule", "AvailabilityRule")
+                        .WithMany("BreakIntervals")
+                        .HasForeignKey("AvailabilityRuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AvailabilityRule");
+                });
+
             modelBuilder.Entity("FYLA.Core.Entities.BusinessAnalyticsSnapshot", b =>
                 {
                     b.HasOne("FYLA.Core.Entities.Service", "MostRequestedService")
@@ -506,6 +818,55 @@ namespace FYLA.API.Migrations
                         .IsRequired();
 
                     b.Navigation("MostRequestedService");
+
+                    b.Navigation("Provider");
+                });
+
+            modelBuilder.Entity("FYLA.Core.Entities.ContentComment", b =>
+                {
+                    b.HasOne("FYLA.Core.Entities.ContentPost", "ContentPost")
+                        .WithMany("Comments")
+                        .HasForeignKey("ContentPostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FYLA.Core.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ContentPost");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FYLA.Core.Entities.ContentLike", b =>
+                {
+                    b.HasOne("FYLA.Core.Entities.ContentPost", "ContentPost")
+                        .WithMany("Likes")
+                        .HasForeignKey("ContentPostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FYLA.Core.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ContentPost");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FYLA.Core.Entities.ContentPost", b =>
+                {
+                    b.HasOne("FYLA.Core.Entities.User", "Provider")
+                        .WithMany("ContentPosts")
+                        .HasForeignKey("ProviderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Provider");
                 });
@@ -654,6 +1015,33 @@ namespace FYLA.API.Migrations
                     b.Navigation("Provider");
                 });
 
+            modelBuilder.Entity("FYLA.Core.Entities.TemporaryReservation", b =>
+                {
+                    b.HasOne("FYLA.Core.Entities.User", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FYLA.Core.Entities.User", "Provider")
+                        .WithMany()
+                        .HasForeignKey("ProviderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FYLA.Core.Entities.Service", "Service")
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Provider");
+
+                    b.Navigation("Service");
+                });
+
             modelBuilder.Entity("FYLA.Core.Entities.UserServiceProviderTag", b =>
                 {
                     b.HasOne("FYLA.Core.Entities.ServiceProviderTag", "ServiceProviderTag")
@@ -678,6 +1066,18 @@ namespace FYLA.API.Migrations
                     b.Navigation("Review");
 
                     b.Navigation("Services");
+                });
+
+            modelBuilder.Entity("FYLA.Core.Entities.AvailabilityRule", b =>
+                {
+                    b.Navigation("BreakIntervals");
+                });
+
+            modelBuilder.Entity("FYLA.Core.Entities.ContentPost", b =>
+                {
+                    b.Navigation("Comments");
+
+                    b.Navigation("Likes");
                 });
 
             modelBuilder.Entity("FYLA.Core.Entities.Conversation", b =>
@@ -706,6 +1106,8 @@ namespace FYLA.API.Migrations
                     b.Navigation("ClientFavorites");
 
                     b.Navigation("ClientReviews");
+
+                    b.Navigation("ContentPosts");
 
                     b.Navigation("Followers");
 

@@ -26,11 +26,8 @@ class SearchService {
 
   // Universal search across providers, content, and users
   async universalSearch(request: SearchRequest): Promise<SearchResponse> {
-    return await ServiceFactory.executeWithFallback(
-      FEATURE_FLAGS.USE_REAL_SEARCH_API,
-      () => this.universalSearchReal(request),
-      () => this.universalSearchMock(request)
-    );
+    console.log('🔍 universalSearch called - ALWAYS using REAL API');
+    return await this.universalSearchReal(request);
   }
 
   private async universalSearchReal(request: SearchRequest): Promise<SearchResponse> {
@@ -157,11 +154,8 @@ class SearchService {
 
   // Content-specific search (posts, stories)
   async searchContent(request: ContentSearchRequest): Promise<ContentSearchResponse> {
-    return await ServiceFactory.executeWithFallback(
-      FEATURE_FLAGS.USE_REAL_SEARCH_API,
-      () => this.searchContentReal(request),
-      () => this.searchContentMock(request)
-    );
+    console.log('🔍 searchContent called - ALWAYS using REAL API');
+    return await this.searchContentReal(request);
   }
 
   private async searchContentReal(request: ContentSearchRequest): Promise<ContentSearchResponse> {
@@ -208,11 +202,8 @@ class SearchService {
 
   // Location-based search
   async searchByLocation(request: LocationSearchRequest): Promise<LocationSearchResponse> {
-    return await ServiceFactory.executeWithFallback(
-      FEATURE_FLAGS.USE_REAL_SEARCH_API,
-      () => this.searchByLocationReal(request),
-      () => this.searchByLocationMock(request)
-    );
+    console.log('🔍 searchByLocation called - ALWAYS using REAL API');
+    return await this.searchByLocationReal(request);
   }
 
   private async searchByLocationReal(request: LocationSearchRequest): Promise<LocationSearchResponse> {
@@ -264,11 +255,8 @@ class SearchService {
 
   // Get search suggestions
   async getSearchSuggestions(query: string): Promise<SearchSuggestion[]> {
-    return await ServiceFactory.executeWithFallback(
-      FEATURE_FLAGS.USE_REAL_SEARCH_API,
-      () => this.getSearchSuggestionsReal(query),
-      () => this.getSearchSuggestionsMock(query)
-    );
+    console.log('🔍 getSearchSuggestions called - ALWAYS using REAL API');
+    return await this.getSearchSuggestionsReal(query);
   }
 
   private async getSearchSuggestionsReal(query: string): Promise<SearchSuggestion[]> {
@@ -358,11 +346,8 @@ class SearchService {
 
   // Popular/trending searches
   async getTrendingSearches(): Promise<SearchSuggestion[]> {
-    return await ServiceFactory.executeWithFallback(
-      FEATURE_FLAGS.USE_REAL_SEARCH_API,
-      () => this.getTrendingSearchesReal(),
-      () => this.getTrendingSearchesMock()
-    );
+    console.log('🔍 getTrendingSearches called - ALWAYS using REAL API');
+    return await this.getTrendingSearchesReal();
   }
 
   private async getTrendingSearchesReal(): Promise<SearchSuggestion[]> {

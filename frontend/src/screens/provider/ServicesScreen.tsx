@@ -13,26 +13,39 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/theme/ThemeProvider';
 import { serviceService } from '@/services/serviceService';
 import { Service } from '@/types';
 import ServiceModal from '@/components/provider/ServiceModal';
 
 const ServicesScreen: React.FC = () => {
-  const { token } = useAuth();
+  const { token, user, isLoading: authLoading } = useAuth();
+  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+  
   const [services, setServices] = useState<Service[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
 
+  // Create styles with theme
+  const styles = createStyles(colors, typography, spacing, borderRadius, shadows);
+
   const loadServices = async (showLoader = true) => {
-    if (!token) return;
+    if (!token || !user?.id) {
+      setIsLoading(false);
+      return;
+    }
+    
+    const userId = user.id; // Extract userId after null check
     
     if (showLoader) setIsLoading(true);
     try {
-      const servicesData = await serviceService.getProviderServices(token);
-      setServices(servicesData);
+      const servicesData = await serviceService.getProviderServices(userId);
+      // Handle both ServiceListResponse and direct array response
+      setServices(servicesData.services || servicesData);
     } catch (error) {
+      console.error('❌ ServicesScreen loadServices error:', error);
       Alert.alert(
         'Error',
         error instanceof Error ? error.message : 'Failed to load services'
@@ -45,8 +58,10 @@ const ServicesScreen: React.FC = () => {
 
   useFocusEffect(
     useCallback(() => {
-      loadServices();
-    }, [token])
+      if (token && user?.id) {
+        loadServices();
+      }
+    }, [token, user?.id])
   );
 
   const handleRefresh = () => {
@@ -180,7 +195,7 @@ const ServicesScreen: React.FC = () => {
           style={styles.actionButton}
           onPress={() => handleEditService(service)}
         >
-          <Ionicons name="create" size={16} color="#3b82f6" />
+          <Ionicons name="create" size={16} color={colors.primary} />
           <Text style={styles.actionButtonText}>Edit</Text>
         </TouchableOpacity>
         
@@ -188,7 +203,7 @@ const ServicesScreen: React.FC = () => {
           style={[styles.actionButton, styles.deleteButton]}
           onPress={() => handleDeleteService(service)}
         >
-          <Ionicons name="trash" size={16} color="#ef4444" />
+          <Ionicons name="trash" size={16} color={colors.status.error} />
           <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Delete</Text>
         </TouchableOpacity>
       </View>
@@ -197,7 +212,7 @@ const ServicesScreen: React.FC = () => {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Ionicons name="list" size={64} color="#d1d5db" />
+      <Ionicons name="list" size={64} color={colors.text.tertiary} />
       <Text style={styles.emptyStateTitle}>No Services Yet</Text>
       <Text style={styles.emptyStateSubtitle}>
         Add your first service to start accepting bookings from clients
@@ -211,26 +226,38 @@ const ServicesScreen: React.FC = () => {
     </View>
   );
 
+  // Show loading screen while authentication is being checked
+  if (authLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.text.secondary }]}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8b5cf6" />
-          <Text style={styles.loadingText}>Loading services...</Text>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.text.secondary }]}>Loading services...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={styles.header}>
         <Text style={styles.title}>My Services</Text>
         <TouchableOpacity 
           style={styles.addButton}
           onPress={handleAddService}
         >
-          <Ionicons name="add" size={24} color="white" />
+          <Ionicons name="add" size={24} color={colors.text.inverse} />
         </TouchableOpacity>
       </View>
 
@@ -247,7 +274,7 @@ const ServicesScreen: React.FC = () => {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            tintColor="#8b5cf6"
+            tintColor={colors.primary}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -263,10 +290,10 @@ const ServicesScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, typography: any, spacing: any, borderRadius: any, shadows: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background.primary,
   },
   loadingContainer: {
     flex: 1,
@@ -274,169 +301,170 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
+    marginTop: spacing.lg,
+    fontSize: typography.size.md,
+    color: colors.text.secondary,
+    fontWeight: typography.weight.medium,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 16,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
+    fontSize: typography.size.xl,
+    fontWeight: typography.weight.bold,
+    color: colors.text.primary,
   },
   addButton: {
-    backgroundColor: '#8b5cf6',
-    borderRadius: 8,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
     width: 40,
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.sm,
   },
   listContainer: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
   emptyContainer: {
     flex: 1,
   },
   serviceCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    ...shadows.sm,
   },
   serviceHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   serviceInfo: {
     flex: 1,
   },
   serviceName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 4,
+    fontSize: typography.size.lg,
+    fontWeight: typography.weight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
   },
   serviceDetails: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   servicePrice: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#059669',
+    fontSize: typography.size.md,
+    fontWeight: typography.weight.semibold,
+    color: colors.status.success,
   },
   serviceDuration: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginLeft: 4,
+    fontSize: typography.size.sm,
+    color: colors.text.secondary,
+    marginLeft: spacing.xs,
   },
   serviceActions: {
-    marginLeft: 16,
+    marginLeft: spacing.lg,
   },
   statusToggle: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
     borderWidth: 1,
   },
   activeToggle: {
-    backgroundColor: '#dcfce7',
-    borderColor: '#059669',
+    backgroundColor: colors.status.success + '20',
+    borderColor: colors.status.success,
   },
   inactiveToggle: {
-    backgroundColor: '#fef2f2',
-    borderColor: '#dc2626',
+    backgroundColor: colors.status.error + '20',
+    borderColor: colors.status.error,
   },
   statusText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: typography.size.xs,
+    fontWeight: typography.weight.semibold,
   },
   activeText: {
-    color: '#059669',
+    color: colors.status.success,
   },
   inactiveText: {
-    color: '#dc2626',
+    color: colors.status.error,
   },
   serviceDescription: {
-    fontSize: 14,
-    color: '#6b7280',
+    fontSize: typography.size.sm,
+    color: colors.text.secondary,
     lineHeight: 20,
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   serviceFooter: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 12,
+    gap: spacing.md,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: '#f3f4f6',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.background.tertiary,
+    borderWidth: 1,
+    borderColor: colors.border.light,
   },
   deleteButton: {
-    backgroundColor: '#fef2f2',
+    backgroundColor: colors.status.error + '10',
+    borderColor: colors.status.error + '30',
   },
   actionButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#3b82f6',
-    marginLeft: 4,
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.medium,
+    color: colors.primary,
+    marginLeft: spacing.xs,
   },
   deleteButtonText: {
-    color: '#ef4444',
+    color: colors.status.error,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: spacing.xxl,
   },
   emptyStateTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#374151',
-    marginTop: 16,
-    marginBottom: 8,
+    fontSize: typography.size.xl,
+    fontWeight: typography.weight.semibold,
+    color: colors.text.primary,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
   },
   emptyStateSubtitle: {
-    fontSize: 16,
-    color: '#6b7280',
+    fontSize: typography.size.md,
+    color: colors.text.secondary,
     textAlign: 'center',
     lineHeight: 24,
-    marginBottom: 32,
+    marginBottom: spacing.xxl,
   },
   addFirstServiceButton: {
-    backgroundColor: '#8b5cf6',
-    borderRadius: 12,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    ...shadows.sm,
   },
   addFirstServiceButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.text.inverse,
+    fontSize: typography.size.md,
+    fontWeight: typography.weight.semibold,
   },
 });
 

@@ -75,6 +75,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
       
       await AsyncStorage.setItem('token', response.token);
+      await AsyncStorage.setItem('refreshToken', response.refreshToken);
       await AsyncStorage.setItem('user', JSON.stringify(response.user));
       
       setAuthState({
@@ -99,6 +100,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authService.register(userData);
       
       await AsyncStorage.setItem('token', response.token);
+      await AsyncStorage.setItem('refreshToken', response.refreshToken);
       await AsyncStorage.setItem('user', JSON.stringify(response.user));
       
       setAuthState({
@@ -116,6 +118,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     try {
       await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('refreshToken');
       await AsyncStorage.removeItem('user');
       
       setAuthState({
@@ -131,9 +134,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const refreshToken = async () => {
     try {
-      if (authState.token) {
-        const response = await authService.refreshToken(authState.token);
+      const storedRefreshToken = await AsyncStorage.getItem('refreshToken');
+      if (storedRefreshToken) {
+        const response = await authService.refreshToken(storedRefreshToken);
         await AsyncStorage.setItem('token', response.token);
+        await AsyncStorage.setItem('refreshToken', response.refreshToken);
         
         setAuthState(prev => ({
           ...prev,

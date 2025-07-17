@@ -37,7 +37,7 @@ interface ChatProviderProps {
 }
 
 export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
-  const { token, user } = useAuth();
+  const { token, user, isLoading: authLoading } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessagesState] = useState<{ [conversationId: number]: Message[] }>({});
   const [activeConversation, setActiveConversation] = useState<number | null>(null);
@@ -225,7 +225,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
   const reactToMessage = async (messageId: number, emoji: string) => {
     try {
-      if (!token || !user) return;
+      if (!token || !user?.id) return;
       
       // TODO: Implement message reactions API
       console.log(`User ${user.id} reacted with ${emoji} to message ${messageId}`);

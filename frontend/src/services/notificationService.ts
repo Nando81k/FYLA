@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { Platform, Alert } from 'react-native';
+import { API_CONFIG } from '@/config/api';
 import { 
   NotificationData, 
   NotificationType, 
@@ -41,7 +42,7 @@ class NotificationService {
   private isConnected = false;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
-  private baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+  private baseUrl = API_CONFIG.baseURL; // Use the same API config as other services
 
   async initialize(): Promise<void> {
     try {
@@ -50,19 +51,33 @@ class NotificationService {
       if (token) {
         this.expoPushToken = token;
         this.hasPermission = true;
-        console.log('Push notification token:', token);
+        console.log('✅ Push notification token:', token.substring(0, 20) + '...');
         
         // Register token with backend
-        await this.registerPushToken(token);
+        try {
+          await this.registerPushToken(token);
+        } catch (error) {
+          console.warn('⚠️  Failed to register push token with backend:', error);
+        }
+      } else {
+        console.warn('⚠️  Push notifications not available (development mode)');
+        this.expoPushToken = null;
+        this.hasPermission = false;
       }
 
       // Set up notification listeners
       this.setupNotificationListeners();
       
-      // Connect to WebSocket for real-time notifications
-      this.connectWebSocket();
+      // TODO: Connect to SignalR for real-time notifications
+      // Currently disabled due to SignalR client library not configured
+      // this.connectWebSocket();
+      
+      console.log('✅ Notification service initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize notifications:', error);
+      console.error('❌ Failed to initialize notifications:', error);
+      // Don't throw, just log the error and continue
+      this.expoPushToken = null;
+      this.hasPermission = false;
     }
   }
 
@@ -152,7 +167,7 @@ class NotificationService {
         lastUsed: new Date().toISOString(),
       };
 
-      const response = await fetch(`${this.baseUrl}/api/notifications/register-token`, {
+      const response = await fetch(`${this.baseUrl}/notifications/register-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -179,14 +194,14 @@ class NotificationService {
       if (filter?.limit) params.append('limit', filter.limit.toString());
       if (filter?.offset) params.append('offset', filter.offset.toString());
 
-      const response = await fetch(`${this.baseUrl}/api/notifications?${params}`);
+      const response = await fetch(`${this.baseUrl}/notifications?${params}`);
       if (!response.ok) {
         throw new Error('Failed to fetch notifications');
       }
 
       return await response.json();
     } catch (error) {
-      console.error('Failed to fetch notifications:', error);
+      console.warn('⚠️  Notifications API not available, using mock data (development mode)');
       // Return mock data for development
       return this.getMockNotifications(filter);
     }
@@ -194,7 +209,7 @@ class NotificationService {
 
   async markAsRead(notificationIds: string[]): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/notifications/mark-read`, {
+      const response = await fetch(`${this.baseUrl}/notifications/mark-read`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -215,7 +230,7 @@ class NotificationService {
 
   async markAllAsRead(): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/notifications/mark-all-read`, {
+      const response = await fetch(`${this.baseUrl}/notifications/mark-all-read`, {
         method: 'PATCH',
       });
 
@@ -232,7 +247,7 @@ class NotificationService {
 
   async deleteNotifications(notificationIds: string[]): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/notifications`, {
+      const response = await fetch(`${this.baseUrl}/notifications`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -253,14 +268,14 @@ class NotificationService {
 
   async getNotificationSettings(userId: number): Promise<NotificationSettings> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/notifications/settings/${userId}`);
+      const response = await fetch(`${this.baseUrl}/notifications/settings/${userId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch notification settings');
       }
 
       return await response.json();
     } catch (error) {
-      console.error('Failed to fetch notification settings:', error);
+      console.warn('⚠️  Notification settings API not available, using defaults (development mode)');
       // Return default settings
       return this.getDefaultNotificationSettings(userId);
     }
@@ -268,7 +283,7 @@ class NotificationService {
 
   async updateNotificationSettings(settings: NotificationSettings): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/notifications/settings`, {
+      const response = await fetch(`${this.baseUrl}/notifications/settings`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -288,14 +303,14 @@ class NotificationService {
 
   async getBadgeData(userId: number): Promise<NotificationBadge> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/notifications/badge/${userId}`);
+      const response = await fetch(`${this.baseUrl}/notifications/badge/${userId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch badge data');
       }
 
       return await response.json();
     } catch (error) {
-      console.error('Failed to fetch badge data:', error);
+      console.warn('⚠️  Badge data API not available, using mock data (development mode)');
       // Return mock badge data
       return {
         total: 0,
@@ -447,8 +462,19 @@ class NotificationService {
   }
 
   private async registerForPushNotificationsAsync(): Promise<string | null> {
+    // Skip push notifications in development if project ID is placeholder
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId || 
+                     (Constants.expoConfig as any)?.projectId ||
+                     Constants.manifest?.extra?.eas?.projectId;
+    
+    if (!projectId || projectId === '550e8400-e29b-41d4-a716-446655440000') {
+      console.warn('🚨 Push notifications disabled: Using placeholder project ID');
+      console.warn('To enable push notifications, update the projectId in app.json');
+      return null;
+    }
+
     if (!Device.isDevice) {
-      Alert.alert('Error', 'Push notifications only work on physical devices');
+      console.warn('🚨 Push notifications disabled: Not running on physical device');
       return null;
     }
 
@@ -461,20 +487,11 @@ class NotificationService {
     }
 
     if (finalStatus !== 'granted') {
-      Alert.alert(
-        'Permission Required',
-        'Push notifications are disabled. You can enable them in your device settings to receive important updates.',
-        [{ text: 'OK' }]
-      );
+      console.warn('🚨 Push notifications disabled: Permission not granted');
       return null;
     }
 
     try {
-      const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-      if (!projectId) {
-        throw new Error('Project ID not found');
-      }
-
       const token = await Notifications.getExpoPushTokenAsync({
         projectId,
       });

@@ -4,6 +4,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using FYLA.Application.Interfaces;
+using FYLA.Application.Services;
+using FYLA.Core.Interfaces;
 using FYLA.Infrastructure.Data;
 using FYLA.API.Middleware;
 using FYLA.API.Hubs;
@@ -124,7 +126,9 @@ builder.Services.AddCors(options =>
             "exp://10.0.12.121:8081",
             "exp://192.168.1.100:8081",
             "http://192.168.1.185:8081",
-            "exp://192.168.1.185:8081"
+            "exp://192.168.1.185:8081",
+            "http://192.168.1.201:8081",
+            "exp://192.168.1.201:8081"
           )
             .AllowAnyMethod()
             .AllowAnyHeader()
@@ -139,7 +143,11 @@ builder.Services.AddSignalR();
 builder.Services.AddScoped<IAuthService, FYLA.Application.Services.AuthService>();
 builder.Services.AddScoped<IAppointmentService, FYLA.Application.Services.AppointmentService>();
 builder.Services.AddScoped<IChatService, FYLA.Application.Services.ChatService>();
+builder.Services.AddScoped<ISocialService, FYLA.Application.Services.SocialService>();
 builder.Services.AddScoped<IServiceManagementService, FYLA.Application.Services.ServiceManagementService>();
+builder.Services.AddScoped<IContentService, FYLA.Application.Services.ContentService>();
+builder.Services.AddScoped<IAvailabilityService, FYLA.Application.Services.AvailabilityService>();
+// TODO: Add IReviewService registration after fixing interface
 builder.Services.AddScoped<FYLA.Infrastructure.Services.DatabaseSeeder>();
 
 var app = builder.Build();
@@ -171,8 +179,9 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Map SignalR Hub
+// Map SignalR Hubs
 app.MapHub<ChatHub>("/chathub");
+app.MapHub<NotificationHub>("/notifications");
 
 // Health check endpoint
 app.MapGet("/health", () => new { status = "healthy", timestamp = DateTime.UtcNow });

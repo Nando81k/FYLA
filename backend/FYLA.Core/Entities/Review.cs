@@ -25,7 +25,11 @@ namespace FYLA.Core.Entities
     [StringLength(1000)]
     public string Comment { get; set; } = string.Empty;
 
+    public bool WouldRecommend { get; set; } = true;
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public DateTime? UpdatedAt { get; set; }
 
     // Navigation properties
     [ForeignKey(nameof(AppointmentId))]

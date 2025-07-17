@@ -24,6 +24,12 @@ namespace FYLA.Infrastructure.Data
     public DbSet<ServiceProviderTag> ServiceProviderTags { get; set; }
     public DbSet<UserServiceProviderTag> UserServiceProviderTags { get; set; }
     public DbSet<BusinessAnalyticsSnapshot> BusinessAnalyticsSnapshots { get; set; }
+    public DbSet<ContentPost> ContentPosts { get; set; }
+    public DbSet<ContentLike> ContentLikes { get; set; }
+    public DbSet<ContentComment> ContentComments { get; set; }
+    public DbSet<TemporaryReservation> TemporaryReservations { get; set; }
+    public DbSet<AvailabilityRule> AvailabilityRules { get; set; }
+    public DbSet<BreakInterval> BreakIntervals { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -238,6 +244,97 @@ namespace FYLA.Infrastructure.Data
                     .WithMany(e => e.BusinessAnalyticsSnapshots)
                     .HasForeignKey(e => e.MostRequestedServiceId)
                     .OnDelete(DeleteBehavior.Restrict);
+      });
+
+      // Configure ContentPost entity
+      modelBuilder.Entity<ContentPost>(entity =>
+      {
+        entity.HasKey(e => e.Id);
+        entity.Property(e => e.Content).IsRequired().HasMaxLength(1000);
+        entity.Property(e => e.ImageUrl).HasMaxLength(500);
+
+        entity.HasOne(e => e.Provider)
+                    .WithMany(e => e.ContentPosts)
+                    .HasForeignKey(e => e.ProviderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+        entity.HasMany(e => e.Services)
+                    .WithMany(e => e.ContentPosts)
+                    .UsingEntity(
+                        "ContentPostService",
+                        l => l.HasOne(typeof(Service)).WithMany().HasForeignKey("ServiceId"),
+                        r => r.HasOne(typeof(ContentPost)).WithMany().HasForeignKey("ContentPostId"),
+                        j => j.HasKey("ContentPostId", "ServiceId"));
+      });
+
+      // Configure ContentLike entity
+      modelBuilder.Entity<ContentLike>(entity =>
+      {
+        entity.HasKey(e => e.Id);
+
+        entity.HasOne(e => e.ContentPost)
+                    .WithMany(e => e.Likes)
+                    .HasForeignKey(e => e.ContentPostId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+        entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+        // Ensure one like per user per post
+        entity.HasIndex(e => new { e.ContentPostId, e.UserId }).IsUnique();
+      });
+
+      // Configure ContentComment entity
+      modelBuilder.Entity<ContentComment>(entity =>
+      {
+        entity.HasKey(e => e.Id);
+        entity.Property(e => e.Comment).IsRequired().HasMaxLength(500);
+
+        entity.HasOne(e => e.ContentPost)
+                    .WithMany(e => e.Comments)
+                    .HasForeignKey(e => e.ContentPostId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+        entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+      });
+
+      // Configure AvailabilityRule entity
+      modelBuilder.Entity<AvailabilityRule>(entity =>
+      {
+        entity.HasKey(e => e.Id);
+        entity.Property(e => e.ExternalId).IsRequired().HasMaxLength(50);
+        entity.Property(e => e.StartTime).IsRequired().HasMaxLength(5);
+        entity.Property(e => e.EndTime).IsRequired().HasMaxLength(5);
+        entity.Property(e => e.Timezone).IsRequired().HasMaxLength(50);
+
+        entity.HasOne(e => e.Provider)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProviderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+        entity.HasIndex(e => e.ExternalId).IsUnique();
+      });
+
+      // Configure BreakInterval entity
+      modelBuilder.Entity<BreakInterval>(entity =>
+      {
+        entity.HasKey(e => e.Id);
+        entity.Property(e => e.ExternalId).IsRequired().HasMaxLength(50);
+        entity.Property(e => e.StartTime).IsRequired().HasMaxLength(5);
+        entity.Property(e => e.EndTime).IsRequired().HasMaxLength(5);
+        entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+
+        entity.HasOne(e => e.AvailabilityRule)
+                    .WithMany(e => e.BreakIntervals)
+                    .HasForeignKey(e => e.AvailabilityRuleId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+        entity.HasIndex(e => e.ExternalId).IsUnique();
       });
     }
   }

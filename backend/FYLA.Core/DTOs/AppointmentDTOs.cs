@@ -41,7 +41,7 @@ namespace FYLA.Core.DTOs
     public UserDto? Client { get; set; }
     public UserDto? Provider { get; set; }
     public List<AppointmentServiceDto> Services { get; set; } = new();
-    public ReviewDto? Review { get; set; }
+    // public ReviewDto? Review { get; set; } // Temporarily commented out
   }
 
   public class AppointmentServiceDto

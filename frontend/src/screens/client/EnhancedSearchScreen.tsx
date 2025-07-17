@@ -19,11 +19,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/theme/ThemeProvider';
 import { searchService } from '@/services/searchService';
 import { locationService, LocationCoordinates } from '@/services/locationService';
 import MapComponent, { MarkerData } from '@/components/shared/MapComponent';
 import SearchFilterModal from '@/components/search/SearchFilterModal';
 import SmartBookingSuggestionsModal from '@/components/booking/SmartBookingSuggestionsModal';
+import DarkModeToggle from '@/components/shared/DarkModeToggle';
 import {
   SearchRequest,
   SearchResponse,
@@ -59,6 +61,7 @@ const getTagTextColor = (index: number) => tagColors[index % tagColors.length].t
 
 const EnhancedSearchScreen: React.FC = () => {
   const { token, user } = useAuth();
+  const { colors, typography, spacing } = useTheme();
   const navigation = useNavigation<SearchNavigationProp>();
   
   // Search state
@@ -296,81 +299,100 @@ const EnhancedSearchScreen: React.FC = () => {
 
   const renderProviderCard = ({ item: provider }: { item: ProviderProfile }) => (
     <TouchableOpacity 
-      style={styles.providerCard}
+      style={[styles.providerCard, { 
+        backgroundColor: colors.background.secondary,
+        borderColor: colors.border.primary,
+        shadowColor: colors.shadow.light,
+      }]}
       onPress={() => navigation.navigate('ProviderDetail', { providerId: provider.id })}
     >
-      {/* Tags at the top for better visibility */}
-      <View style={styles.tagsContainer}>
-        {provider.tags.slice(0, 4).map((tag, index) => (
-          <View 
-            key={tag.id} 
-            style={[
-              styles.tag,
-              { backgroundColor: getTagColor(index) }
-            ]}
-          >
-            <Text style={[styles.tagText, { color: getTagTextColor(index) }]}>
-              {tag.name}
-            </Text>
+      {/* Header with Profile and Online Status */}
+      <View style={styles.modernProviderHeader}>
+        <View style={styles.providerMainInfo}>
+          <Image
+            source={{
+              uri: provider.profilePictureUrl || 'https://via.placeholder.com/60x60?text=?',
+            }}
+            style={[styles.modernProviderImage, { borderColor: colors.border.primary }]}
+          />
+          <View style={styles.providerHeaderDetails}>
+            <View style={styles.providerNameRow}>
+              <Text style={[styles.modernProviderName, { color: colors.text.primary }]}>
+                {provider.fullName}
+              </Text>
+              {provider.isOnline && (
+                <View style={[styles.onlineIndicator, { backgroundColor: colors.status.success }]} />
+              )}
+            </View>
+            
+            <View style={styles.ratingRow}>
+              {renderStars(provider.averageRating)}
+              <Text style={[styles.ratingText, { color: colors.text.secondary }]}>
+                {provider.averageRating} ({provider.totalReviews})
+              </Text>
+            </View>
+            
+            {provider.distance && (
+              <View style={styles.distanceRow}>
+                <Ionicons name="location-outline" size={14} color={colors.primary} />
+                <Text style={[styles.distanceText, { color: colors.primary }]}>
+                  {provider.distance < 1 
+                    ? `${Math.round(provider.distance * 1000)}m away`
+                    : `${provider.distance.toFixed(1)}km away`
+                  }
+                </Text>
+              </View>
+            )}
           </View>
-        ))}
-        {provider.tags.length > 4 && (
-          <View style={styles.moreTagsIndicator}>
-            <Text style={styles.moreTagsText}>+{provider.tags.length - 4}</Text>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.providerHeader}>
-        <Image
-          source={{
-            uri: provider.profilePictureUrl || 'https://via.placeholder.com/60x60?text=?',
-          }}
-          style={styles.providerImage}
-        />
-        <View style={styles.providerInfo}>
-          <View style={styles.providerNameRow}>
-            <Text style={styles.providerName}>{provider.fullName}</Text>
-            {provider.isOnline && <View style={styles.onlineIndicator} />}
-          </View>
-          
-          <View style={styles.ratingRow}>
-            {renderStars(provider.averageRating)}
-            <Text style={styles.ratingText}>
-              {provider.averageRating} ({provider.totalReviews} reviews)
-            </Text>
-          </View>
-          
-          {provider.distance && (
-            <Text style={styles.distanceText}>
-              {provider.distance < 1 
-                ? `${Math.round(provider.distance * 1000)}m away`
-                : `${provider.distance.toFixed(1)}km away`
-              }
-            </Text>
+        </View>
+        
+        {/* Service tags */}
+        <View style={styles.tagsContainer}>
+          {provider.tags.slice(0, 3).map((tag, index) => (
+            <View 
+              key={tag.id} 
+              style={[
+                styles.modernTag,
+                { backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' }
+              ]}
+            >
+              <Text style={[styles.modernTagText, { color: colors.primary }]}>
+                {tag.name}
+              </Text>
+            </View>
+          ))}
+          {provider.tags.length > 3 && (
+            <View style={[styles.moreTagsIndicator, { backgroundColor: colors.background.tertiary }]}>
+              <Text style={[styles.moreTagsText, { color: colors.text.secondary }]}>
+                +{provider.tags.length - 3}
+              </Text>
+            </View>
           )}
         </View>
       </View>
 
+      {/* Bio */}
       {provider.bio && (
-        <Text style={styles.providerBio} numberOfLines={2}>
+        <Text style={[styles.modernProviderBio, { color: colors.text.secondary }]} numberOfLines={2}>
           {provider.bio}
         </Text>
       )}
 
-      {/* Posts Preview */}
+      {/* Posts Preview with Enhanced Layout */}
       {provider.posts && provider.posts.length > 0 && (
-        <View style={styles.postsPreview}>
+        <View style={[styles.modernPostsPreview, { backgroundColor: colors.background.tertiary }]}>
           <View style={styles.postsPreviewHeader}>
-            <Text style={styles.postsPreviewTitle}>Recent Work</Text>
+            <Text style={[styles.postsPreviewTitle, { color: colors.text.primary }]}>
+              Recent Work
+            </Text>
             <TouchableOpacity
               onPress={() => handleExpandPosts(provider)}
               style={styles.expandPostsButton}
             >
-              <Text style={styles.expandPostsText}>
+              <Text style={[styles.expandPostsText, { color: colors.primary }]}>
                 View all {provider.posts.length}
               </Text>
-              <Ionicons name="chevron-forward" size={16} color="#8b5cf6" />
+              <Ionicons name="chevron-forward" size={16} color={colors.primary} />
             </TouchableOpacity>
           </View>
           
@@ -380,20 +402,20 @@ const EnhancedSearchScreen: React.FC = () => {
             style={styles.postsScrollView}
             contentContainerStyle={styles.postsScrollContent}
           >
-            {provider.posts.map((post, index) => (
+            {provider.posts.slice(0, 5).map((post, index) => (
               <TouchableOpacity
                 key={post.id}
-                style={styles.postThumbnail}
+                style={[styles.modernPostThumbnail, { borderColor: colors.border.primary }]}
                 onPress={() => handleExpandPosts(provider)}
               >
                 <Image
                   source={{ uri: post.media[0]?.url }}
-                  style={styles.postThumbnailImage}
+                  style={styles.modernPostThumbnailImage}
                   resizeMode="cover"
                 />
                 {post.media[0]?.type === 'video' && (
                   <View style={styles.videoIndicator}>
-                    <Ionicons name="play" size={12} color="white" />
+                    <Ionicons name="play" size={14} color="white" />
                   </View>
                 )}
                 {post.media.length > 1 && (
@@ -401,25 +423,53 @@ const EnhancedSearchScreen: React.FC = () => {
                     <Ionicons name="copy" size={12} color="white" />
                   </View>
                 )}
+                <View style={styles.postThumbnailOverlay}>
+                  <View style={styles.postStats}>
+                    <View style={styles.postStat}>
+                      <Ionicons name="heart" size={10} color="white" />
+                      <Text style={styles.postStatText}>{post.likesCount || 0}</Text>
+                    </View>
+                  </View>
+                </View>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
       )}
 
-      {provider.services.length > 0 && (
-        <View style={styles.servicesPreview}>
-          <Text style={styles.servicePreviewText}>
-            Starting from ${Math.min(...provider.services.map(s => s.price))}
+      {/* Services and Price */}
+      <View style={styles.modernServicesFooter}>
+        <View style={styles.servicesInfo}>
+          <Text style={[styles.servicesLabel, { color: colors.text.secondary }]}>
+            Services available
           </Text>
+          <View style={styles.servicesCount}>
+            <Ionicons name="checkmark-circle" size={14} color={colors.status.success} />
+            <Text style={[styles.servicesCountText, { color: colors.status.success }]}>
+              {provider.services.length} services
+            </Text>
+          </View>
         </View>
-      )}
+        
+        {provider.services.length > 0 && (
+          <View style={styles.priceInfo}>
+            <Text style={[styles.priceLabel, { color: colors.text.secondary }]}>Starting from</Text>
+            <Text style={[styles.priceValue, { color: colors.primary }]}>
+              ${Math.min(...provider.services.map(s => s.price))}
+            </Text>
+          </View>
+        )}
+      </View>
     </TouchableOpacity>
   );
 
   const renderContentCard = ({ item: content }: { item: ContentSearchResult }) => (
     <TouchableOpacity 
-      style={styles.contentCard}
+      style={[styles.modernContentCard, { 
+        backgroundColor: colors.background.secondary,
+        borderColor: colors.border.primary,
+        shadowColor: colors.shadow.light,
+      }]}
       onPress={() => navigation.navigate('PostDetail', { postId: content.id })}
     >
       <View style={styles.contentHeader}>
@@ -427,36 +477,66 @@ const EnhancedSearchScreen: React.FC = () => {
           source={{
             uri: content.authorProfilePicture || 'https://via.placeholder.com/40x40?text=?',
           }}
-          style={styles.contentAuthorImage}
+          style={[styles.contentAuthorImage, { borderColor: colors.border.primary }]}
         />
         <View style={styles.contentAuthorInfo}>
-          <Text style={styles.contentAuthorName}>{content.authorName}</Text>
-          <Text style={styles.contentType}>{content.type}</Text>
+          <Text style={[styles.contentAuthorName, { color: colors.text.primary }]}>
+            {content.authorName}
+          </Text>
+          <View style={styles.contentTypeRow}>
+            <Ionicons name="document-text" size={12} color={colors.text.secondary} />
+            <Text style={[styles.contentType, { color: colors.text.secondary }]}>
+              {content.type}
+            </Text>
+          </View>
         </View>
       </View>
 
       {content.media.length > 0 && (
-        <Image
-          source={{ uri: content.media[0].thumbnailUrl || content.media[0].url }}
-          style={styles.contentImage}
-          resizeMode="cover"
-        />
+        <View style={styles.contentImageContainer}>
+          <Image
+            source={{ uri: content.media[0].thumbnailUrl || content.media[0].url }}
+            style={styles.modernContentImage}
+            resizeMode="cover"
+          />
+          {content.media[0].type === 'video' && (
+            <View style={styles.contentVideoIndicator}>
+              <Ionicons name="play" size={20} color="white" />
+            </View>
+          )}
+          {content.media.length > 1 && (
+            <View style={styles.contentMultipleIndicator}>
+              <Ionicons name="copy" size={14} color="white" />
+              <Text style={styles.contentMultipleText}>+{content.media.length - 1}</Text>
+            </View>
+          )}
+        </View>
       )}
 
       {content.caption && (
-        <Text style={styles.contentCaption} numberOfLines={2}>
+        <Text style={[styles.modernContentCaption, { color: colors.text.primary }]} numberOfLines={2}>
           {content.caption}
         </Text>
       )}
 
-      <View style={styles.contentStats}>
+      <View style={[styles.contentStats, { borderTopColor: colors.border.primary }]}>
         <View style={styles.contentStat}>
-          <Ionicons name="heart" size={14} color="#ef4444" />
-          <Text style={styles.contentStatText}>{content.likesCount}</Text>
+          <Ionicons name="heart" size={16} color={colors.status.error} />
+          <Text style={[styles.contentStatText, { color: colors.text.secondary }]}>
+            {content.likesCount}
+          </Text>
         </View>
         <View style={styles.contentStat}>
-          <Ionicons name="chatbubble" size={14} color="#6b7280" />
-          <Text style={styles.contentStatText}>{content.commentsCount}</Text>
+          <Ionicons name="chatbubble" size={16} color={colors.text.secondary} />
+          <Text style={[styles.contentStatText, { color: colors.text.secondary }]}>
+            {content.commentsCount}
+          </Text>
+        </View>
+        <View style={styles.contentStat}>
+          <Ionicons name="share-social" size={16} color={colors.text.secondary} />
+          <Text style={[styles.contentStatText, { color: colors.text.secondary }]}>
+            Share
+          </Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -464,39 +544,75 @@ const EnhancedSearchScreen: React.FC = () => {
 
   const renderUserCard = ({ item: userResult }: { item: UserSearchResult }) => (
     <TouchableOpacity 
-      style={styles.userCard}
+      style={[styles.modernUserCard, { 
+        backgroundColor: colors.background.secondary,
+        borderColor: colors.border.primary,
+        shadowColor: colors.shadow.light,
+      }]}
       onPress={() => navigation.navigate('UserProfile', { userId: userResult.id })}
     >
-      <Image
-        source={{
-          uri: userResult.profilePictureUrl || 'https://via.placeholder.com/60x60?text=?',
-        }}
-        style={styles.userImage}
-      />
-      <View style={styles.userInfo}>
-        <View style={styles.userNameRow}>
-          <Text style={styles.userName}>{userResult.fullName}</Text>
-          {userResult.isServiceProvider && (
-            <View style={styles.providerBadge}>
-              <Ionicons name="checkmark-circle" size={14} color="#10b981" />
-            </View>
+      <View style={styles.userCardHeader}>
+        <Image
+          source={{
+            uri: userResult.profilePictureUrl || 'https://via.placeholder.com/60x60?text=?',
+          }}
+          style={[styles.modernUserImage, { borderColor: colors.border.primary }]}
+        />
+        <View style={styles.userInfo}>
+          <View style={styles.userNameRow}>
+            <Text style={[styles.modernUserName, { color: colors.text.primary }]}>
+              {userResult.fullName}
+            </Text>
+            {userResult.isServiceProvider && (
+              <View style={[styles.providerBadge, { backgroundColor: colors.status.success + '20' }]}>
+                <Ionicons name="checkmark-circle" size={16} color={colors.status.success} />
+              </View>
+            )}
+          </View>
+          
+          {userResult.bio && (
+            <Text style={[styles.modernUserBio, { color: colors.text.secondary }]} numberOfLines={2}>
+              {userResult.bio}
+            </Text>
           )}
-        </View>
-        
-        {userResult.bio && (
-          <Text style={styles.userBio} numberOfLines={1}>
-            {userResult.bio}
-          </Text>
-        )}
-
-        <View style={styles.userStats}>
-          <Text style={styles.userStat}>{userResult.stats.postsCount} posts</Text>
-          <Text style={styles.userStat}>{userResult.stats.followersCount} followers</Text>
         </View>
       </View>
 
-      <TouchableOpacity style={styles.followButton}>
-        <Text style={styles.followButtonText}>
+      <View style={[styles.userStatsRow, { borderTopColor: colors.border.primary }]}>
+        <View style={styles.userStat}>
+          <Text style={[styles.userStatNumber, { color: colors.text.primary }]}>
+            {userResult.stats.postsCount}
+          </Text>
+          <Text style={[styles.userStatLabel, { color: colors.text.secondary }]}>Posts</Text>
+        </View>
+        <View style={[styles.userStatDivider, { backgroundColor: colors.border.primary }]} />
+        <View style={styles.userStat}>
+          <Text style={[styles.userStatNumber, { color: colors.text.primary }]}>
+            {userResult.stats.followersCount}
+          </Text>
+          <Text style={[styles.userStatLabel, { color: colors.text.secondary }]}>Followers</Text>
+        </View>
+        <View style={[styles.userStatDivider, { backgroundColor: colors.border.primary }]} />
+        <View style={styles.userStat}>
+          <Text style={[styles.userStatNumber, { color: colors.text.primary }]}>
+            {userResult.stats.followingCount || 0}
+          </Text>
+          <Text style={[styles.userStatLabel, { color: colors.text.secondary }]}>Following</Text>
+        </View>
+      </View>
+
+      <TouchableOpacity 
+        style={[
+          styles.modernFollowButton,
+          userResult.isFollowing 
+            ? { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }
+            : { backgroundColor: colors.primary, borderColor: colors.primary }
+        ]}
+      >
+        <Text style={[
+          styles.modernFollowButtonText,
+          { color: userResult.isFollowing ? colors.text.secondary : colors.text.inverse }
+        ]}>
           {userResult.isFollowing ? 'Following' : 'Follow'}
         </Text>
       </TouchableOpacity>
@@ -772,28 +888,43 @@ const EnhancedSearchScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Search</Text>
-        {searchMode === 'search' && searchResults && (
-          <TouchableOpacity onPress={saveCurrentSearch}>
-            <Ionicons name="bookmark-outline" size={24} color="#8b5cf6" />
-          </TouchableOpacity>
-        )}
+      <View style={[styles.header, { backgroundColor: colors.background.primary }]}>
+        <View style={styles.headerContent}>
+          <Text style={[styles.title, { color: colors.text.primary }]}>Search</Text>
+          <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
+            Find providers, content, and users
+          </Text>
+        </View>
+        <View style={styles.headerActions}>
+          {searchMode === 'search' && searchResults && (
+            <TouchableOpacity 
+              onPress={saveCurrentSearch}
+              style={[styles.headerButton, { backgroundColor: colors.background.secondary }]}
+            >
+              <Ionicons name="bookmark-outline" size={22} color={colors.primary} />
+            </TouchableOpacity>
+          )}
+          <DarkModeToggle size={22} style={styles.darkModeToggle} />
+        </View>
       </View>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <Ionicons name="search" size={20} color="#9ca3af" />
+        <View style={[styles.searchInputContainer, { 
+          backgroundColor: colors.background.secondary,
+          borderColor: colors.border.primary,
+          shadowColor: colors.shadow.light,
+        }]}>
+          <Ionicons name="search" size={20} color={colors.text.secondary} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.text.primary }]}
             placeholder="Search providers, content, or users..."
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={() => performSearch()}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.text.tertiary}
             returnKeyType="search"
           />
           {searchQuery.length > 0 && (
@@ -805,16 +936,20 @@ const EnhancedSearchScreen: React.FC = () => {
                 setShowSuggestions(false);
               }}
             >
-              <Ionicons name="close-circle" size={20} color="#9ca3af" />
+              <Ionicons name="close-circle" size={20} color={colors.text.secondary} />
             </TouchableOpacity>
           )}
         </View>
         
         <TouchableOpacity
-          style={styles.filterButton}
+          style={[styles.filterButton, { 
+            backgroundColor: colors.background.secondary,
+            borderColor: colors.border.primary,
+            shadowColor: colors.shadow.light,
+          }]}
           onPress={() => setShowFilters(true)}
         >
-          <Ionicons name="options" size={20} color="#8b5cf6" />
+          <Ionicons name="options" size={20} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -1005,150 +1140,185 @@ const EnhancedSearchScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: 24,
     paddingTop: 20,
     paddingBottom: 16,
   },
+  headerContent: {
+    flex: 1,
+  },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
+    fontSize: 28,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    opacity: 0.8,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  darkModeToggle: {
+    marginLeft: 8,
   },
   searchContainer: {
     flexDirection: 'row',
     paddingHorizontal: 24,
-    marginBottom: 16,
+    marginBottom: 20,
     gap: 12,
   },
   searchInputContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 12,
+    borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     gap: 12,
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#1f2937',
+    fontWeight: '500',
   },
   filterButton: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    width: 48,
-    height: 48,
+    borderRadius: 16,
+    width: 52,
+    height: 52,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   suggestionsContainer: {
-    backgroundColor: 'white',
     marginHorizontal: 24,
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 16,
-    maxHeight: 200,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    maxHeight: 250,
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowRadius: 12,
+    elevation: 4,
   },
   suggestionsList: {
-    maxHeight: 200,
+    maxHeight: 250,
   },
   suggestionItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
   },
   suggestionContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
   },
   suggestionText: {
     fontSize: 16,
-    color: '#374151',
+    fontWeight: '500',
   },
   suggestionCount: {
     fontSize: 14,
-    color: '#6b7280',
+    fontWeight: '600',
+    opacity: 0.7,
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: 'white',
     marginHorizontal: 24,
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 16,
+    borderRadius: 16,
+    padding: 6,
+    marginBottom: 20,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   tab: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 12,
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: 12,
   },
   activeTab: {
-    backgroundColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   tabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6b7280',
+    fontSize: 15,
+    fontWeight: '600',
   },
   activeTabText: {
-    color: 'white',
+    fontWeight: '700',
   },
   viewToggleContainer: {
     flexDirection: 'row',
     marginHorizontal: 24,
-    marginBottom: 16,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    padding: 4,
+    marginBottom: 20,
+    borderRadius: 16,
+    padding: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   viewToggleButton: {
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 8,
-    gap: 6,
+    borderRadius: 12,
+    gap: 8,
   },
   viewToggleButtonActive: {
-    backgroundColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   viewToggleText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#8b5cf6',
+    fontSize: 15,
+    fontWeight: '600',
   },
   viewToggleTextActive: {
-    color: '#ffffff',
+    fontWeight: '700',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 64,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
+    fontWeight: '500',
   },
   discoverContainer: {
     flex: 1,
@@ -1164,24 +1334,25 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   discoverSectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontSize: 20,
+    fontWeight: '700',
   },
   discoverSectionAction: {
-    fontSize: 14,
-    color: '#8b5cf6',
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
   },
   recentSearchItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'white',
-    borderRadius: 12,
+    borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     marginBottom: 8,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   recentSearchContent: {
     flexDirection: 'row',
@@ -1190,17 +1361,20 @@ const styles = StyleSheet.create({
   },
   recentSearchText: {
     fontSize: 16,
-    color: '#374151',
+    fontWeight: '500',
   },
   savedSearchItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'white',
-    borderRadius: 12,
+    borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     marginBottom: 8,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   savedSearchContent: {
     flexDirection: 'row',
@@ -1209,22 +1383,24 @@ const styles = StyleSheet.create({
   },
   savedSearchName: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#374151',
+    fontWeight: '600',
   },
   savedSearchQuery: {
     fontSize: 14,
-    color: '#6b7280',
+    opacity: 0.7,
   },
   trendingItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'white',
-    borderRadius: 12,
+    borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     marginBottom: 8,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   trendingContent: {
     flexDirection: 'row',
@@ -1233,12 +1409,11 @@ const styles = StyleSheet.create({
   },
   trendingText: {
     fontSize: 16,
-    color: '#374151',
+    fontWeight: '500',
   },
   trendingCount: {
     fontSize: 14,
-    color: '#10b981',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   categoriesContainer: {
     flexDirection: 'row',
@@ -1250,76 +1425,79 @@ const styles = StyleSheet.create({
     width: 80,
   },
   categoryIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#f8fafc',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   categoryName: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#374151',
+    fontSize: 13,
+    fontWeight: '600',
     textAlign: 'center',
   },
   sectionHeader: {
-    backgroundColor: '#f3f4f6',
     paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingVertical: 16,
     marginBottom: 8,
   },
   sectionHeaderText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
+    fontSize: 18,
+    fontWeight: '700',
   },
   resultsContainer: {
     paddingBottom: 24,
   },
-  // Provider card styles
+  
+  // Modern Provider Card Styles
   providerCard: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 24,
+    padding: 20,
     marginHorizontal: 24,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    marginBottom: 20,
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  providerHeader: {
+  modernProviderHeader: {
+    marginBottom: 16,
+  },
+  providerMainInfo: {
     flexDirection: 'row',
     marginBottom: 12,
   },
-  providerImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 12,
+  modernProviderImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    marginRight: 16,
+    borderWidth: 2,
   },
-  providerInfo: {
+  providerHeaderDetails: {
     flex: 1,
+    justifyContent: 'space-between',
   },
   providerNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
   },
-  providerName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
+  modernProviderName: {
+    fontSize: 20,
+    fontWeight: '700',
     marginRight: 8,
   },
   onlineIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#10b981',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   ratingRow: {
     flexDirection: 'row',
@@ -1332,23 +1510,373 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 14,
-    color: '#6b7280',
+    fontWeight: '500',
+  },
+  distanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   distanceText: {
     fontSize: 14,
-    color: '#8b5cf6',
-    fontWeight: '500',
-  },
-  providerBio: {
-    fontSize: 14,
-    color: '#6b7280',
-    lineHeight: 20,
-    marginBottom: 12,
+    fontWeight: '600',
   },
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 8,
+  },
+  modernTag: {
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+  },
+  modernTagText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  moreTagsIndicator: {
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    justifyContent: 'center',
+  },
+  moreTagsText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  modernProviderBio: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 16,
+  },
+  
+  // Modern Posts Preview
+  modernPostsPreview: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  postsPreviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  postsPreviewTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  expandPostsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  expandPostsText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  postsScrollView: {
+    flexGrow: 0,
+  },
+  postsScrollContent: {
+    paddingRight: 16,
+    gap: 12,
+  },
+  modernPostThumbnail: {
+    width: 100,
+    height: 100,
+    borderRadius: 16,
+    overflow: 'hidden',
+    position: 'relative',
+    borderWidth: 1,
+  },
+  modernPostThumbnailImage: {
+    width: '100%',
+    height: '100%',
+  },
+  videoIndicator: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 12,
+    padding: 4,
+  },
+  multipleMediaIndicator: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 12,
+    padding: 4,
+  },
+  postThumbnailOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  postStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  postStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  postStatText: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  
+  // Modern Services Footer
+  modernServicesFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 16,
+    borderTopWidth: 1,
+  },
+  servicesInfo: {
+    flex: 1,
+  },
+  servicesLabel: {
+    fontSize: 13,
+    marginBottom: 4,
+  },
+  servicesCount: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
+  },
+  servicesCountText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  priceInfo: {
+    alignItems: 'flex-end',
+  },
+  priceLabel: {
+    fontSize: 13,
+    marginBottom: 4,
+  },
+  priceValue: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  
+  // Modern Content Card Styles
+  modernContentCard: {
+    borderRadius: 24,
+    marginHorizontal: 24,
+    marginBottom: 20,
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    overflow: 'hidden',
+  },
+  contentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    paddingBottom: 12,
+  },
+  contentAuthorImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+    borderWidth: 2,
+  },
+  contentAuthorInfo: {
+    flex: 1,
+  },
+  contentAuthorName: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  contentTypeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  contentType: {
+    fontSize: 13,
+    fontWeight: '500',
+    textTransform: 'capitalize',
+  },
+  contentImageContainer: {
+    position: 'relative',
+  },
+  modernContentImage: {
+    width: '100%',
+    height: 240,
+  },
+  contentVideoIndicator: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -20 }, { translateY: -20 }],
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 20,
+    padding: 8,
+  },
+  contentMultipleIndicator: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  contentMultipleText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  modernContentCaption: {
+    padding: 16,
+    paddingTop: 12,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  contentStats: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 20,
+    borderTopWidth: 1,
+  },
+  contentStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  contentStatText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  
+  // Modern User Card Styles
+  modernUserCard: {
+    borderRadius: 24,
+    marginHorizontal: 24,
+    marginBottom: 20,
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    overflow: 'hidden',
+  },
+  userCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 20,
+    paddingBottom: 16,
+  },
+  modernUserImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 16,
+    borderWidth: 2,
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  modernUserName: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginRight: 8,
+  },
+  providerBadge: {
+    borderRadius: 12,
+    padding: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modernUserBio: {
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  userStatsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+  },
+  userStat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  userStatNumber: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  userStatLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  userStatDivider: {
+    width: 1,
+    height: '100%',
+    marginHorizontal: 8,
+  },
+  modernFollowButton: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  modernFollowButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  
+  // Legacy styles for compatibility
+  providerHeader: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  providerImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 12,
+  },
+  providerName: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginRight: 8,
+  },
+  providerBio: {
+    fontSize: 14,
+    lineHeight: 20,
     marginBottom: 12,
   },
   tag: {
@@ -1360,49 +1888,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  moreTagsIndicator: {
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    justifyContent: 'center',
-  },
-  moreTagsText: {
-    fontSize: 12,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  // Posts Preview Styles
   postsPreview: {
     marginBottom: 12,
-  },
-  postsPreviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  postsPreviewTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  expandPostsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  expandPostsText: {
-    fontSize: 12,
-    color: '#8b5cf6',
-    fontWeight: '500',
-  },
-  postsScrollView: {
-    flexGrow: 0,
-  },
-  postsScrollContent: {
-    paddingRight: 16,
-    gap: 8,
   },
   postThumbnail: {
     width: 80,
@@ -1415,112 +1902,22 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  videoIndicator: {
-    position: 'absolute',
-    top: 4,
-    left: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 8,
-    padding: 2,
-  },
-  multipleMediaIndicator: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 8,
-    padding: 2,
-  },
-  // Posts Modal Styles
-  postsModalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  postsModalContent: {
-    backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 20,
-    paddingBottom: 34,
-    paddingHorizontal: 24,
-    maxHeight: '80%',
-  },
-  postsModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  postsModalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  postsModalFooter: {
-    marginTop: 20,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
-  },
-  bookButton: {
-    backgroundColor: '#8b5cf6',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  bookButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
   servicesPreview: {
     borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
     paddingTop: 12,
   },
   servicePreviewText: {
     fontSize: 16,
-    color: '#059669',
     fontWeight: '600',
   },
-  // Content card styles
   contentCard: {
-    backgroundColor: 'white',
     borderRadius: 16,
     marginHorizontal: 24,
     marginBottom: 16,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
-  },
-  contentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    paddingBottom: 12,
-  },
-  contentAuthorImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 12,
-  },
-  contentAuthorInfo: {
-    flex: 1,
-  },
-  contentAuthorName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  contentType: {
-    fontSize: 12,
-    color: '#6b7280',
-    textTransform: 'capitalize',
   },
   contentImage: {
     width: '100%',
@@ -1530,34 +1927,15 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingTop: 12,
     fontSize: 14,
-    color: '#374151',
     lineHeight: 20,
   },
-  contentStats: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    gap: 16,
-  },
-  contentStat: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  contentStatText: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  // User card styles
   userCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
     borderRadius: 16,
     padding: 16,
     marginHorizontal: 24,
     marginBottom: 16,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -1569,52 +1947,29 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     marginRight: 12,
   },
-  userInfo: {
-    flex: 1,
-  },
-  userNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
   userName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1f2937',
     marginRight: 6,
-  },
-  providerBadge: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#ecfdf5',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   userBio: {
     fontSize: 14,
-    color: '#6b7280',
     marginBottom: 4,
   },
   userStats: {
     flexDirection: 'row',
     gap: 12,
   },
-  userStat: {
-    fontSize: 12,
-    color: '#6b7280',
-  },
   followButton: {
-    backgroundColor: '#8b5cf6',
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 16,
   },
   followButtonText: {
-    color: 'white',
     fontSize: 12,
     fontWeight: '600',
   },
+  
   emptyState: {
     flex: 1,
     justifyContent: 'center',
@@ -1622,25 +1977,64 @@ const styles = StyleSheet.create({
     paddingVertical: 64,
   },
   emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#374151',
+    fontSize: 22,
+    fontWeight: '700',
     marginTop: 16,
     marginBottom: 8,
   },
   emptyStateSubtitle: {
     fontSize: 16,
-    color: '#6b7280',
     textAlign: 'center',
+    opacity: 0.7,
   },
   mapContainer: {
     flex: 1,
     margin: 24,
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
   },
   map: {
     flex: 1,
+  },
+  
+  // Posts Modal Styles
+  postsModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  postsModalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 24,
+    paddingBottom: 34,
+    paddingHorizontal: 24,
+    maxHeight: '80%',
+  },
+  postsModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  postsModalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  postsModalFooter: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+  },
+  bookButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  bookButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
   },
   floatingAIButton: {
     position: 'absolute',
@@ -1652,7 +2046,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF6B9D',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,

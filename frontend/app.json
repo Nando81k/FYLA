@@ -6,6 +6,8 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "owner": "fyla-development",
+    "projectId": "550e8400-e29b-41d4-a716-446655440000",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",

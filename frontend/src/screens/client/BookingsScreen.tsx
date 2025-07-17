@@ -15,15 +15,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/theme/ThemeProvider';
 import { useBooking } from '@/context/BookingContext';
 import { appointmentService } from '@/services/appointmentService';
 import { Appointment, AppointmentStatus, Review, ClientFeedStackParamList } from '@/types';
 import ReviewModal from '@/components/client/ReviewModal';
+import DarkModeToggle from '@/components/shared/DarkModeToggle';
 
 type BookingsScreenNavigationProp = StackNavigationProp<ClientFeedStackParamList, 'FeedHome'>;
 
 const BookingsScreen: React.FC = () => {
   const { token } = useAuth();
+  const { colors, typography, spacing } = useTheme();
   const navigation = useNavigation<BookingsScreenNavigationProp>();
   const { 
     bookings,
@@ -54,6 +57,8 @@ const BookingsScreen: React.FC = () => {
         appointmentService.getAppointments(),
         fetchBookings() // Load real bookings from backend
       ]);
+      console.log('📋 Appointments data received:', JSON.stringify(appointmentsData, null, 2));
+      console.log('📋 First appointment notes:', appointmentsData.appointments?.[0]?.notes);
       setAppointments(appointmentsData.appointments || []);
     } catch (error) {
       console.error('Error loading appointments:', error);
@@ -195,7 +200,7 @@ const BookingsScreen: React.FC = () => {
   };
 
   const renderAppointmentCard = ({ item: appointment }: { item: Appointment }) => (
-    <View style={styles.appointmentCard}>
+    <View style={[styles.appointmentCard, { backgroundColor: colors.background.secondary }]}>
       <View style={styles.appointmentHeader}>
         <View style={styles.providerInfo}>
           <Image
@@ -205,28 +210,28 @@ const BookingsScreen: React.FC = () => {
             style={styles.providerImage}
           />
           <View style={styles.providerDetails}>
-            <Text style={styles.providerName}>
+            <Text style={[styles.providerName, { color: colors.text.primary }]}>
               {appointment.provider?.fullName || 'Provider'}
             </Text>
-            <Text style={styles.appointmentDate}>
+            <Text style={[styles.appointmentDate, { color: colors.text.secondary }]}>
               {formatDate(appointment.scheduledStartTime)}
             </Text>
-            <Text style={styles.appointmentTime}>
+            <Text style={[styles.appointmentTime, { color: colors.primary }]}>
               {formatTime(appointment.scheduledStartTime)}
             </Text>
           </View>
         </View>
         
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(appointment.status) }]}>
-          <Text style={styles.statusText}>{getStatusText(appointment.status)}</Text>
+          <Text style={[styles.statusText, { color: colors.text.inverse }]}>{getStatusText(appointment.status)}</Text>
         </View>
       </View>
 
       {appointment.services && appointment.services.length > 0 && (
         <View style={styles.servicesSection}>
-          <Text style={styles.servicesTitle}>Services:</Text>
+          <Text style={[styles.servicesTitle, { color: colors.text.primary }]}>Services:</Text>
           {appointment.services.map((service, index) => (
-            <Text key={index} style={styles.serviceItem}>
+            <Text key={index} style={[styles.serviceItem, { color: colors.text.secondary }]}>
               • {service.service?.name || 'Service'} - ${service.priceAtBooking?.toFixed(2) || '0.00'}
             </Text>
           ))}
@@ -235,32 +240,41 @@ const BookingsScreen: React.FC = () => {
 
       {appointment.notes && (
         <View style={styles.notesSection}>
-          <Text style={styles.notesTitle}>Notes:</Text>
-          <Text style={styles.notesText}>{appointment.notes}</Text>
+          <Text style={[styles.notesTitle, { color: colors.text.primary }]}>Notes:</Text>
+          <Text style={[styles.notesText, { color: colors.text.secondary }]}>{appointment.notes}</Text>
         </View>
       )}
+      
+      {/* Debug logging happens here */}
+      {(() => {
+        console.log('📋 Appointment notes for ID', appointment.id, ':', appointment.notes);
+        if (!appointment.notes) {
+          console.log('📋 No notes found for appointment ID', appointment.id);
+        }
+        return null;
+      })()}
 
-      <View style={styles.appointmentFooter}>
-        <Text style={styles.totalPrice}>
+      <View style={[styles.appointmentFooter, { borderTopColor: colors.border.primary }]}>
+        <Text style={[styles.totalPrice, { color: colors.accent }]}>
           Total: ${appointment.totalPrice?.toFixed(2) || '0.00'}
         </Text>
         
         <View style={styles.actionButtons}>
           {appointment.status === AppointmentStatus.PENDING && (
             <TouchableOpacity
-              style={styles.cancelButton}
+              style={[styles.cancelButton, { backgroundColor: colors.status.error + '20', borderColor: colors.status.error + '50' }]}
               onPress={() => handleCancelAppointment(appointment)}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={[styles.cancelButtonText, { color: colors.status.error }]}>Cancel</Text>
             </TouchableOpacity>
           )}
           
           {appointment.status === AppointmentStatus.COMPLETED && (
             <TouchableOpacity 
-              style={styles.reviewButton}
+              style={[styles.reviewButton, { backgroundColor: colors.primary + '20', borderColor: colors.primary + '50' }]}
               onPress={() => handleWriteReview(appointment)}
             >
-              <Text style={styles.reviewButtonText}>
+              <Text style={[styles.reviewButtonText, { color: colors.primary }]}>
                 {appointment.review ? 'Edit Review' : 'Write Review'}
               </Text>
             </TouchableOpacity>
@@ -276,11 +290,11 @@ const BookingsScreen: React.FC = () => {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Ionicons name="calendar-outline" size={64} color="#d1d5db" />
-      <Text style={styles.emptyStateTitle}>
+      <Ionicons name="calendar-outline" size={64} color={colors.text.secondary} />
+      <Text style={[styles.emptyStateTitle, { color: colors.text.primary }]}>
         {selectedTab === 'upcoming' ? 'No Upcoming Appointments' : 'No Past Appointments'}
       </Text>
-      <Text style={styles.emptyStateSubtitle}>
+      <Text style={[styles.emptyStateSubtitle, { color: colors.text.secondary }]}>
         {selectedTab === 'upcoming' 
           ? 'Let our AI assistant help you find the perfect service'
           : 'Your completed appointments will appear here'
@@ -288,14 +302,14 @@ const BookingsScreen: React.FC = () => {
       </Text>
       {selectedTab === 'upcoming' && (
         <View style={styles.emptyStateButtons}>
-          <TouchableOpacity style={styles.aiBookingButton} onPress={handleAIBooking}>
-            <Ionicons name="flash" size={20} color="#fff" />
-            <Text style={styles.aiBookingButtonText}>AI Booking Assistant</Text>
+          <TouchableOpacity style={[styles.aiBookingButton, { backgroundColor: colors.primary }]} onPress={handleAIBooking}>
+            <Ionicons name="flash" size={20} color={colors.text.inverse} />
+            <Text style={[styles.aiBookingButtonText, { color: colors.text.inverse }]}>AI Booking Assistant</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.exploreButton} onPress={() => {
-            navigation.navigate('Search');
+          <TouchableOpacity style={[styles.exploreButton, { backgroundColor: colors.accent }]} onPress={() => {
+            navigation.navigate('FeedHome');
           }}>
-            <Text style={styles.exploreButtonText}>Browse Providers</Text>
+            <Text style={[styles.exploreButtonText, { color: colors.text.inverse }]}>Browse Providers</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -304,10 +318,10 @@ const BookingsScreen: React.FC = () => {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8b5cf6" />
-          <Text style={styles.loadingText}>Loading appointments...</Text>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.text.secondary }]}>Loading appointments...</Text>
         </View>
       </SafeAreaView>
     );
@@ -316,31 +330,50 @@ const BookingsScreen: React.FC = () => {
   const filteredAppointments = filterAppointments(appointments);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>My Bookings</Text>
-        <TouchableOpacity style={styles.aiBookingHeaderButton} onPress={handleAIBooking}>
-          <Ionicons name="flash" size={16} color="#fff" />
-          <Text style={styles.aiBookingHeaderText}>AI Assistant</Text>
-        </TouchableOpacity>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <View style={[styles.header, { backgroundColor: colors.background.primary, borderBottomColor: colors.border.primary }]}>
+        <Text style={[styles.title, { color: colors.text.primary }]}>My Bookings</Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={[styles.aiBookingHeaderButton, { backgroundColor: colors.primary }]} onPress={handleAIBooking}>
+            <Ionicons name="flash" size={16} color={colors.text.inverse} />
+            <Text style={[styles.aiBookingHeaderText, { color: colors.text.inverse }]}>AI Assistant</Text>
+          </TouchableOpacity>
+          <DarkModeToggle size={24} style={styles.darkModeToggle} />
+        </View>
       </View>
 
       {/* Tabs */}
-      <View style={styles.tabsContainer}>
+      <View style={[styles.tabsContainer, { backgroundColor: colors.background.primary }]}>
         <TouchableOpacity
-          style={[styles.tab, selectedTab === 'upcoming' && styles.activeTab]}
+          style={[
+            styles.tab, 
+            { backgroundColor: colors.background.secondary, borderColor: colors.border.primary },
+            selectedTab === 'upcoming' && { backgroundColor: colors.primary }
+          ]}
           onPress={() => setSelectedTab('upcoming')}
         >
-          <Text style={[styles.tabText, selectedTab === 'upcoming' && styles.activeTabText]}>
+          <Text style={[
+            styles.tabText, 
+            { color: colors.text.primary },
+            selectedTab === 'upcoming' && { color: colors.text.inverse }
+          ]}>
             Upcoming
           </Text>
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={[styles.tab, selectedTab === 'past' && styles.activeTab]}
+          style={[
+            styles.tab, 
+            { backgroundColor: colors.background.secondary, borderColor: colors.border.primary },
+            selectedTab === 'past' && { backgroundColor: colors.primary }
+          ]}
           onPress={() => setSelectedTab('past')}
         >
-          <Text style={[styles.tabText, selectedTab === 'past' && styles.activeTabText]}>
+          <Text style={[
+            styles.tabText, 
+            { color: colors.text.primary },
+            selectedTab === 'past' && { color: colors.text.inverse }
+          ]}>
             Past
           </Text>
         </TouchableOpacity>
@@ -359,7 +392,8 @@ const BookingsScreen: React.FC = () => {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            tintColor="#8b5cf6"
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -382,7 +416,6 @@ const BookingsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   loadingContainer: {
     flex: 1,
@@ -392,7 +425,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
   },
   header: {
     flexDirection: 'row',
@@ -401,15 +433,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 20,
     paddingBottom: 16,
+    borderBottomWidth: 1,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  darkModeToggle: {
+    marginLeft: 8,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1a1a1a',
   },
   tabsContainer: {
     flexDirection: 'row',
-    backgroundColor: 'white',
     marginHorizontal: 24,
     borderRadius: 12,
     padding: 4,
@@ -421,16 +460,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  activeTab: {
-    backgroundColor: '#8b5cf6',
-  },
   tabText: {
     fontSize: 16,
-    color: '#6b7280',
     fontWeight: '500',
-  },
-  activeTabText: {
-    color: 'white',
   },
   listContainer: {
     paddingHorizontal: 24,
@@ -475,17 +507,14 @@ const styles = StyleSheet.create({
   providerName: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1f2937',
     marginBottom: 4,
   },
   appointmentDate: {
     fontSize: 14,
-    color: '#6b7280',
     marginBottom: 2,
   },
   appointmentTime: {
     fontSize: 16,
-    color: '#8b5cf6',
     fontWeight: '500',
   },
   statusBadge: {
@@ -495,7 +524,6 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   statusText: {
-    color: 'white',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -505,12 +533,10 @@ const styles = StyleSheet.create({
   servicesTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
     marginBottom: 4,
   },
   serviceItem: {
     fontSize: 14,
-    color: '#6b7280',
     marginBottom: 2,
   },
   notesSection: {
@@ -519,12 +545,10 @@ const styles = StyleSheet.create({
   notesTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
     marginBottom: 4,
   },
   notesText: {
     fontSize: 14,
-    color: '#6b7280',
     fontStyle: 'italic',
   },
   appointmentFooter: {
@@ -532,41 +556,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
     paddingTop: 12,
   },
   totalPrice: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#059669',
   },
   actionButtons: {
     flexDirection: 'row',
     gap: 8,
   },
   cancelButton: {
-    backgroundColor: '#fef2f2',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: '#fecaca',
   },
   cancelButtonText: {
-    color: '#dc2626',
     fontSize: 14,
     fontWeight: '600',
   },
   reviewButton: {
-    backgroundColor: '#f0f9ff',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: '#bae6fd',
   },
   reviewButtonText: {
-    color: '#0284c7',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -579,13 +595,11 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#374151',
     marginTop: 16,
     marginBottom: 8,
   },
   emptyStateSubtitle: {
     fontSize: 16,
-    color: '#6b7280',
     textAlign: 'center',
     paddingHorizontal: 32,
     marginBottom: 24,
@@ -597,7 +611,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   aiBookingButton: {
-    backgroundColor: '#FF6B9D',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -611,13 +624,11 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   aiBookingButtonText: {
-    color: 'white',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
   },
   aiBookingHeaderButton: {
-    backgroundColor: '#FF6B9D',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
@@ -625,20 +636,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   aiBookingHeaderText: {
-    color: 'white',
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 4,
   },
   exploreButton: {
-    backgroundColor: '#8b5cf6',
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
   },
   exploreButtonText: {
-    color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },

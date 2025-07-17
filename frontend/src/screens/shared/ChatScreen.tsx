@@ -44,6 +44,7 @@ const ChatScreen: React.FC = () => {
     sendTyping,
     joinConversation,
     leaveConversation,
+    loadMessages: loadMessagesFromContext,
     sendMessage,
     editMessage,
     deleteMessage,
@@ -63,6 +64,15 @@ const ChatScreen: React.FC = () => {
   }
   
   const { conversationId, otherUser } = routeParams;
+  
+  // Additional safety check for otherUser
+  if (!otherUser || !otherUser.id) {
+    return (
+      <View style={styles.container}>
+        <Text>Error: User information not available</Text>
+      </View>
+    );
+  }
   
   const [messageText, setMessageText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -100,9 +110,8 @@ const ChatScreen: React.FC = () => {
 
     setIsLoading(true);
     try {
-      // Using mock data for now
-      const response = await chatService.getMockMessages(conversationId);
-      setContextMessages(conversationId, response.messages);
+      // Use real data from ChatContext
+      await loadMessagesFromContext(conversationId);
     } catch (error) {
       Alert.alert('Error', 'Failed to load messages');
     } finally {

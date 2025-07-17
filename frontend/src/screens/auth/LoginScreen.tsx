@@ -2,290 +2,278 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
   Alert,
   ActivityIndicator,
+  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
+  Dimensions,
 } from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
-import { useAuth } from '@/context/AuthContext';
-import { LoginRequest } from '@/types';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 
-interface LoginScreenProps {
-  onNavigateToRegister: () => void;
-}
+import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../theme/ThemeProvider';
+import { AuthStackParamList, UserRole } from '../../types';
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToRegister }) => {
+type AuthNavigationProp = StackNavigationProp<AuthStackParamList>;
+
+const { width } = Dimensions.get('window');
+
+const LoginScreen: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
-  
-  const {
-    control,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm<LoginRequest>();
+  const { colors, isDark } = useTheme();
+  const navigation = useNavigation<AuthNavigationProp>();
 
-  const onSubmit = async (data: LoginRequest) => {
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Sign In Failed', 'Please fill in all fields.');
+      return;
+    }
     setIsLoading(true);
     try {
-      await login(data);
+      await login({ email: email.trim(), password });
     } catch (error) {
-      Alert.alert(
-        'Login Failed',
-        error instanceof Error ? error.message : 'An unexpected error occurred'
-      );
+      Alert.alert('Sign In Failed', 'The email or password you entered is incorrect. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Test function for quick login with seeded user
-  const testLogin = () => {
-    setValue('email', 'emma.johnson@email.com');
-    setValue('password', 'TempPassword123!');
-    
-    setTimeout(() => {
-      handleSubmit(onSubmit)();
-    }, 100);
+  const navigateToRegister = (userType: UserRole) => {
+    navigation.navigate('Register', { userType });
   };
 
-  // Test function for quick login as service provider
-  const testProviderLogin = () => {
-    setValue('email', 'isabella.romano@fylapro.com');
-    setValue('password', 'TempPassword123!');
-    
-    setTimeout(() => {
-      handleSubmit(onSubmit)();
-    }, 100);
+  const handleQuickLogin = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      await login({ email, password });
+    } catch (error) {
+      Alert.alert('Quick Login Failed', 'Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to your FYLA account</Text>
-          </View>
-
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <Controller
-                control={control}
-                name="email"
-                rules={{
-                  required: 'Email is required',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Invalid email address',
-                  },
-                }}
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <TextInput
-                    style={[styles.input, errors.email && styles.inputError]}
-                    placeholder="Enter your email"
-                    placeholderTextColor="#999"
-                    value={value}
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                )}
-              />
-              {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
+    <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardAvoidingView}
+        >
+          <View style={styles.content}>
+            {/* Header */}
+            <View style={styles.header}>
+              <Ionicons name="sparkles" size={40} color={colors.primary} />
+              <Text style={[styles.title, { color: colors.text.primary, fontWeight: 'bold' }]}>Welcome to FYLA</Text>
+              <Text style={[styles.subtitle, { color: colors.text.secondary, fontWeight: 'normal' }]}>Find Your Local Artisan</Text>
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
-              <Controller
-                control={control}
-                name="password"
-                rules={{
-                  required: 'Password is required',
-                  minLength: {
-                    value: 6,
-                    message: 'Password must be at least 6 characters',
-                  },
-                }}
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <TextInput
-                    style={[styles.input, errors.password && styles.inputError]}
-                    placeholder="Enter your password"
-                    placeholderTextColor="#999"
-                    value={value}
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    secureTextEntry
-                  />
-                )}
-              />
-              {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
+            {/* Form */}
+            <View style={[
+              styles.formContainer,
+              {
+                backgroundColor: isDark ? 'rgba(42, 42, 46, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(229, 229, 231, 0.5)',
+              }
+            ]}>
+              <View style={[styles.inputContainer, { borderBottomColor: colors.border.light }]}>
+                <Ionicons name="mail-outline" size={22} color={colors.text.secondary} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { color: colors.text.primary }]}
+                  placeholder="Email"
+                  placeholderTextColor={colors.text.secondary}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  returnKeyType="next"
+                />
+              </View>
+              <View style={[styles.inputContainer, { borderBottomColor: colors.border.light }]}>
+                <Ionicons name="lock-closed-outline" size={22} color={colors.text.secondary} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { color: colors.text.primary }]}
+                  placeholder="Password"
+                  placeholderTextColor={colors.text.secondary}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  returnKeyType="done"
+                  onSubmitEditing={handleLogin}
+                />
+              </View>
+              <TouchableOpacity
+                style={[styles.loginButton, { backgroundColor: colors.primary }]}
+                onPress={handleLogin}
+                disabled={isLoading}
+              >
+                {isLoading
+                  ? <ActivityIndicator color={colors.text.inverse} />
+                  : <Text style={[styles.loginButtonText, { color: colors.text.inverse, fontWeight: '600' }]}>Sign In</Text>}
+              </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-              style={[styles.loginButton, isLoading && styles.buttonDisabled]}
-              onPress={handleSubmit(onSubmit)}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.loginButtonText}>Sign In</Text>
-              )}
-            </TouchableOpacity>
-
-            {/* Test login button - remove this in production */}
-            <TouchableOpacity
-              style={[styles.testButton, isLoading && styles.buttonDisabled]}
-              onPress={testLogin}
-              disabled={isLoading}
-            >
-              <Text style={styles.testButtonText}>🧪 Test Login (Emma Johnson - Client)</Text>
-            </TouchableOpacity>
-
-            {/* Test provider login button - remove this in production */}
-            <TouchableOpacity
-              style={[styles.testProviderButton, isLoading && styles.buttonDisabled]}
-              onPress={testProviderLogin}
-              disabled={isLoading}
-            >
-              <Text style={styles.testProviderButtonText}>👩‍⚕️ Test Provider Login (Isabella Romano)</Text>
-            </TouchableOpacity>
+            {/* Sign Up Section */}
+            <View style={styles.signupSection}>
+              <Text style={[styles.signupText, { color: colors.text.secondary }]}>Don't have an account?</Text>
+              <View style={styles.signupButtonContainer}>
+                <TouchableOpacity
+                  style={[styles.signupButton, { borderColor: colors.primary }]}
+                  onPress={() => navigateToRegister(UserRole.CLIENT)}
+                >
+                  <Text style={[styles.signupButtonText, { color: colors.primary }]}>Sign Up as Client</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.signupButton, { borderColor: colors.primary }]}
+                  onPress={() => navigateToRegister(UserRole.PROVIDER)}
+                >
+                  <Text style={[styles.signupButtonText, { color: colors.primary }]}>Become a Provider</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {/* Quick Login Section for Development */}
+              <View style={styles.quickLoginSection}>
+                <Text style={[styles.quickLoginText, { color: colors.text.secondary }]}>Quick Login (Testing)</Text>
+                <View style={styles.quickLoginButtonContainer}>
+                  <TouchableOpacity
+                    style={[styles.quickLoginButton, { backgroundColor: colors.accent }]}
+                    onPress={() => handleQuickLogin('emma.johnson@email.com', 'TempPassword123!')}
+                    disabled={isLoading}
+                  >
+                    <Text style={[styles.quickLoginButtonText, { color: colors.text.inverse }]}>Demo Client</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.quickLoginButton, { backgroundColor: '#D4AF37' }]}
+                    onPress={() => handleQuickLogin('sophia.grace@fylapro.com', 'TempPassword123!')}
+                    disabled={isLoading}
+                  >
+                    <Text style={[styles.quickLoginButtonText, { color: colors.text.inverse }]}>Demo Provider</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
           </View>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={onNavigateToRegister}>
-              <Text style={styles.linkText}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
-  keyboardView: {
+  safeArea: {
+    flex: 1,
+  },
+  keyboardAvoidingView: {
     flex: 1,
   },
   content: {
     flex: 1,
+    justifyContent: 'space-around',
+    alignItems: 'center',
     paddingHorizontal: 24,
-    justifyContent: 'center',
   },
   header: {
     alignItems: 'center',
-    marginBottom: 48,
+    paddingTop: 20,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
+    marginTop: 16,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    textAlign: 'center',
   },
-  form: {
-    marginBottom: 32,
+  formContainer: {
+    width: '100%',
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
   },
   inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
     marginBottom: 20,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 8,
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    flex: 1,
     fontSize: 16,
-    backgroundColor: 'white',
-  },
-  inputError: {
-    borderColor: '#ef4444',
-  },
-  errorText: {
-    color: '#ef4444',
-    fontSize: 12,
-    marginTop: 4,
+    paddingVertical: 12,
   },
   loginButton: {
-    backgroundColor: '#3b82f6',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 16,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
+    marginTop: 10,
   },
   loginButtonText: {
-    color: 'white',
     fontSize: 16,
-    fontWeight: '600',
   },
-  testButton: {
-    backgroundColor: '#f59e0b',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    marginTop: 12,
+  signupSection: {
     alignItems: 'center',
+    width: '100%',
+    paddingBottom: 20,
   },
-  testButtonText: {
-    color: 'white',
+  signupText: {
+    marginBottom: 16,
     fontSize: 14,
-    fontWeight: '600',
   },
-  testProviderButton: {
-    backgroundColor: '#10b981',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    marginTop: 8,
-    alignItems: 'center',
-  },
-  testProviderButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  footer: {
+  signupButtonContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  signupButton: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    width: (width - 68) / 2,
     alignItems: 'center',
-    marginTop: 32,
   },
-  footerText: {
+  signupButtonText: {
     fontSize: 14,
-    color: '#666',
+    fontWeight: '600',
   },
-  linkText: {
-    fontSize: 14,
-    color: '#3b82f6',
+  quickLoginSection: {
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 24,
+  },
+  quickLoginText: {
+    marginBottom: 12,
+    fontSize: 12,
+    opacity: 0.7,
+  },
+  quickLoginButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  quickLoginButton: {
+    borderRadius: 8,
+    paddingVertical: 8,
+    width: (width - 68) / 2,
+    alignItems: 'center',
+  },
+  quickLoginButtonText: {
+    fontSize: 12,
     fontWeight: '600',
   },
 });
